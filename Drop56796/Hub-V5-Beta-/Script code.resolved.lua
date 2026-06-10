@@ -1,0 +1,354 @@
+-- source: github.com/Drop56796/Hub-V5-Beta-  (Script code.lua)
+-- [resolved CLEAN] https://raw.githubusercontent.com/Drop56796/Mercury/main/Mercury.lua  (20293 bytes)
+
+--[[
+ .____                  ________ ___.    _____                           __                
+ |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
+ |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
+ |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
+ |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
+         \/          \/         \/    \/                \/     \/     \/                   
+          \_Welcome to LuaObfuscator.com   (Alpha 0.10.5) ~  Much Love, Ferib 
+
+]]--
+
+local v0=tonumber;local v1=string.byte;local v2=string.char;local v3=string.sub;local v4=string.gsub;local v5=string.rep;local v6=table.concat;local v7=table.insert;local v8=math.ldexp;local v9=getfenv or function() return _ENV;end ;local v10=setmetatable;local v11=pcall;local v12=select;local v13=unpack or table.unpack ;local v14=tonumber;local function v15(v16,v17,...) local v18=1;local v19;v16=v4(v3(v16,5),"..",function(v30) if (v1(v30,2)==79) then v19=v0(v3(v30,1,1));return "";else local v79=0;local v80;while true do if (v79==0) then v80=v2(v0(v30,16));if v19 then local v100=0;local v101;while true do if (v100==1) then return v101;end if (v100==0) then v101=v5(v80,v19);v19=nil;v100=1;end end else return v80;end break;end end end end);local function v20(v31,v32,v33) if v33 then local v81=0 -0 ;local v82;while true do if (v81==(0 -0)) then v82=(v31/((3 -1)^(v32-((879 -(282 + 595)) -1))))%((621 -(555 + 64))^(((v33-1) -(v32-(932 -((2494 -(1523 + 114)) + 74)))) + (569 -(330 + 37 + 201)))) ;return v82-(v82%(928 -(214 + 713))) ;end end else local v83=2^(v32-(1 + 0)) ;return (((v31%(v83 + v83))>=v83) and 1) or (0 + 0) ;end end local function v21() local v34=0 -0 ;local v35;while true do if (v34==(1066 -(68 + (1114 -(32 + 85))))) then return v35;end if (v34==(1270 -(226 + 1044))) then v35=v1(v16,v18,v18);v18=v18 + ((4 + 0) -3) ;v34=1;end end end local function v22() local v36,v37=v1(v16,v18,v18 + 1 + 1 );v18=v18 + (959 -(892 + 65)) ;return (v37 * 256) + v36 ;end local function v23() local v38,v39,v40,v41=v1(v16,v18,v18 + (7 -4) );v18=v18 + ((5 + 1) -2) ;return (v41 * (30800116 -14022900)) + (v40 * (65886 -(87 + 263))) + (v39 * (436 -(67 + 113))) + v38 ;end local function v24() local v42=v23();local v43=v23();local v44=2 -1 ;local v45=(v20(v43,1 + 0 ,79 -59 ) * ((954 -(802 + (478 -328)))^(85 -53))) + v42 ;local v46=v20(v43,37 -16 ,23 + 8 );local v47=((v20(v43,50 -(10 + 8) )==1) and  -(998 -(915 + 82))) or (2 -1) ;if (v46==(0 + 0 + 0)) then if (v45==(0 -0)) then return v47 * 0 ;else v46=1188 -(1069 + 118) ;v44=(0 -0) -0 ;end elseif (v46==(4477 -(2872 -(416 + 26)))) then return ((v45==(0 + 0)) and (v47 * (((1 -0) -0)/(0 + 0)))) or (v47 * NaN) ;end return v8(v47,v46-(1814 -(368 + 423)) ) * (v44 + (v45/((6 -4)^52))) ;end local function v25(v48) local v49=438 -(145 + 293) ;local v50;local v51;while true do if (v49==(4 -3)) then v50=v3(v16,v18,(v18 + v48) -(1 + 0) );v18=v18 + v48 ;v49=2;end if (v49==(432 -(44 + 386))) then v51={};for v90=1487 -(998 + 488) , #v50 do v51[v90]=v2(v1(v3(v50,v90,v90)));end v49=1 + 2 ;end if (v49==(0 + 0)) then v50=nil;if  not v48 then v48=v23();if (v48==(772 -(201 + 571))) then return "";end end v49=1139 -((423 -307) + 1022) ;end if (v49==3) then return v6(v51);end end end local v26=v23;local function v27(...) return {...},v12("#",...);end local function v28() local v52=0 + 0 ;local v53;local v54;local v55;local v56;local v57;local v58;while true do if (v52==2) then local v87=935 -(39 + 896) ;local v88;while true do if (v87~=0) then else v88=0 -0 ;while true do local v102=0 -0 ;while true do if (v102==0) then if ((2 -1)==v88) then return v56;end if (v88==0) then local v104=0 + 0 ;while true do if (v104==0) then for v282=1 + 0 ,v23() do local v283=396 -(115 + 281) ;local v284;local v285;local v286;local v287;while true do if (v283==(0 -0)) then v284=0;v285=nil;v283=1 + 0 ;end if (v283~=1) then else v286=nil;v287=nil;v283=4 -2 ;end if ((7 -5)==v283) then while true do if (v284~=(867 -(550 + 317))) then else local v346=0 -0 ;while true do if (v346==(1 -0)) then v284=2 -1 ;break;end if (v346==0) then v285=0;v286=nil;v346=1;end end end if (v284==(286 -(134 + 151))) then v287=nil;while true do if (v285==(1665 -(970 + 695))) then local v347=0;while true do if (v347~=(1 -0)) then else v285=1;break;end if (v347==0) then v286=1990 -(582 + 1408) ;v287=nil;v347=1;end end end if (v285==1) then while true do if (v286==(0 -0)) then v287=v21();if (v20(v287,1,1 -0 )==(0 -0)) then local v348=1824 -(1195 + 629) ;local v349;local v350;local v351;local v352;local v353;local v354;while true do if (v348==1) then v351=nil;v352=nil;v348=2 -0 ;end if (v348~=2) then else v353=nil;v354=nil;v348=3;end if ((244 -(187 + 54))==v348) then while true do if (1==v349) then v352=nil;v353=nil;v349=782 -(162 + 618) ;end if (v349~=(2 + 0)) then else v354=nil;while true do if (v350==0) then local v355=0;while true do if ((1 + 0)==v355) then v350=1 -0 ;break;end if (0~=v355) then else v351=0 -0 ;v352=nil;v355=1;end end end if (v350~=(1 + 0)) then else local v356=0;local v357;while true do if (v356==(1636 -(1373 + 263))) then v357=0;while true do if (v357==(1000 -(451 + 549))) then local v366=0 + 0 ;while true do if (v366==(0 -0)) then v353=nil;v354=nil;v366=1 -0 ;end if (v366==(1385 -(746 + 638))) then v357=1;break;end end end if (v357~=(1 + 0)) then else v350=2 -0 ;break;end end break;end end end if (2~=v350) then else while true do if (v351==(344 -(218 + 123))) then if (v20(v353,3,1584 -(1535 + 46) )~=1) then else v354[4]=v58[v354[4 + 0 ]];end v53[v282]=v354;break;end if ((1 + 0)==v351) then local v359=560 -(306 + 254) ;local v360;while true do if (v359==(0 + 0)) then v360=0 -0 ;while true do if (v360==(1467 -(899 + 568))) then local v368=0 + 0 ;while true do if (v368==(2 -1)) then v360=604 -(268 + 335) ;break;end if (v368==0) then v354={v22(),v22(),nil,nil};if (v352==0) then local v371=0 + 0 ;while true do if (v371==(1456 -(282 + 1174))) then v354[3]=v22();v354[4]=v22();break;end end elseif (v352==(812 -(569 + 242))) then v354[3]=v23();elseif (v352==2) then v354[3]=v23() -((5 -3)^(1 + 15)) ;elseif (v352~=3) then else local v377=1024 -(706 + 318) ;while true do if (v377==0) then v354[1254 -(721 + 530) ]=v23() -((1273 -(945 + 326))^16) ;v354[4]=v22();break;end end end v368=1;end end end if (1==v360) then v351=4 -2 ;break;end end break;end end end if (v351==0) then local v361=0;while true do if (v361==(0 + 0)) then local v367=700 -(271 + 429) ;while true do if (v367~=1) then else v361=1 + 0 ;break;end if (v367~=(1500 -(1408 + 92))) then else v352=v20(v287,1088 -(461 + 625) ,1291 -(993 + 295) );v353=v20(v287,4,1 + 5 );v367=1;end end end if (v361==(1172 -(418 + 753))) then v351=1;break;end end end if (v351~=2) then else local v362=0;local v363;while true do if ((0 + 0)~=v362) then else v363=0;while true do if (v363==1) then v351=1 + 2 ;break;end if (v363==(0 + 0)) then local v369=0;local v370;while true do if (v369==0) then v370=0;while true do if (v370~=(1 + 0)) then else v363=1;break;end if (v370==0) then local v372=529 -(406 + 123) ;while true do if (v372==1) then v370=1;break;end if (v372==0) then if (v20(v353,1770 -(1749 + 20) ,1 + 0 )~=(1323 -(1249 + 73))) then else v354[1 + 1 ]=v58[v354[1147 -(466 + 679) ]];end if (v20(v353,2,2)~=1) then else v354[6 -3 ]=v58[v354[3]];end v372=1;end end end end break;end end end end break;end end end end break;end end break;end if (v349~=0) then else v350=0 -0 ;v351=nil;v349=1;end end break;end if (v348~=(1900 -(106 + 1794))) then else v349=0 + 0 ;v350=nil;v348=1 + 0 ;end end end break;end end break;end end break;end end break;end end end for v288=2 -1 ,v23() do v54[v288-1 ]=v28();end v104=1;end if (1~=v104) then else v88=2 -1 ;break;end end end break;end end end break;end end end if (v52==(115 -(4 + 110))) then v57=v23();v58={};for v92=1,v57 do local v93=584 -(57 + 527) ;local v94;local v95;while true do if (v93~=1) then else if (v94==(1428 -(41 + 1386))) then v95=v21()~=0 ;elseif (v94==(105 -(17 + 86))) then v95=v24();elseif (v94==3) then v95=v25();end v58[v92]=v95;break;end if (v93~=(0 + 0)) then else v94=v21();v95=nil;v93=1;end end end v56[6 -3 ]=v21();v52=5 -3 ;end if ((166 -(122 + 44))==v52) then v53={};v54={};v55={};v56={v53,v54,nil,v55};v52=1;end end end local function v29(v59,v60,v61) local v62=v59[1];local v63=v59[2];local v64=v59[3];return function(...) local v65=v62;local v66=v63;local v67=v64;local v68=v27;local v69=1;local v70= -1;local v71={};local v72={...};local v73=v12("#",...) -1 ;local v74={};local v75={};for v84=0,v73 do if (v84>=v67) then v71[v84-v67 ]=v72[v84 + 1 ];else v75[v84]=v72[v84 + 1 ];end end local v76=(v73-v67) + 1 ;local v77;local v78;while true do v77=v65[v69];v78=v77[1];if (v78<=16) then if (v78<=7) then if (v78<=3) then if (v78<=1) then if (v78>0) then v69=v77[3];else do return;end end elseif (v78>2) then v75[v77[2]]=v75[v77[3]];else local v108=v77[2];local v109={};for v173=1, #v74 do local v174=v74[v173];for v185=0, #v174 do local v186=v174[v185];local v187=v186[1];local v188=v186[2];if ((v187==v75) and (v188>=v108)) then v109[v188]=v187[v188];v186[1]=v109;end end end end elseif (v78<=5) then if (v78==4) then v75[v77[2]]=v61[v77[3]];else local v112=0;local v113;local v114;local v115;while true do if (0==v112) then v113=v66[v77[3]];v114=nil;v112=1;end if (v112==1) then v115={};v114=v10({},{__index=function(v293,v294) local v295=v115[v294];return v295[1][v295[2]];end,__newindex=function(v296,v297,v298) local v299=0;local v300;while true do if (v299==0) then v300=v115[v297];v300[1][v300[2]]=v298;break;end end end});v112=2;end if (v112==2) then for v301=1,v77[4] do v69=v69 + 1 ;local v302=v65[v69];if (v302[1]==3) then v115[v301-1 ]={v75,v302[3]};else v115[v301-1 ]={v60,v302[3]};end v74[ #v74 + 1 ]=v115;end v75[v77[2]]=v29(v113,v114,v61);break;end end end elseif (v78==6) then if (v75[v77[2]]==v77[4]) then v69=v69 + 1 ;else v69=v77[3];end else local v116=v77[2];local v117,v118=v68(v75[v116](v13(v75,v116 + 1 ,v77[3])));v70=(v118 + v116) -1 ;local v119=0;for v175=v116,v70 do v119=v119 + 1 ;v75[v175]=v117[v119];end end elseif (v78<=11) then if (v78<=9) then if (v78==8) then v75[v77[2]]=v75[v77[3]]%v77[4] ;else local v121=0;while true do if (v121==5) then v75[v77[2]]=v75[v77[3]][v77[4]];v69=v69 + 1 ;v77=v65[v69];v121=6;end if (v121==0) then v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v121=1;end if (v121==7) then if  not v75[v77[2]] then v69=v69 + 1 ;else v69=v77[3];end break;end if (v121==3) then v75[v77[2]]=v75[v77[3]][v77[4]];v69=v69 + 1 ;v77=v65[v69];v121=4;end if (v121==6) then v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v121=7;end if (v121==4) then v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v121=5;end if (v121==1) then v75[v77[2]]=v75[v77[3]][v77[4]];v69=v69 + 1 ;v77=v65[v69];v121=2;end if (v121==2) then v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v121=3;end end end elseif (v78==10) then local v122;local v123,v124;local v125;local v126;v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v61[v77[3]];v69=v69 + 1 ;v77=v65[v69];v126=v77[2];v125=v75[v77[3]];v75[v126 + 1 ]=v125;v75[v126]=v125[v77[4]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v77[3];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v77[3];v69=v69 + 1 ;v77=v65[v69];v126=v77[2];v123,v124=v68(v75[v126](v13(v75,v126 + 1 ,v77[3])));v70=(v124 + v126) -1 ;v122=0;for v178=v126,v70 do v122=v122 + 1 ;v75[v178]=v123[v122];end v69=v69 + 1 ;v77=v65[v69];v126=v77[2];v123,v124=v68(v75[v126](v13(v75,v126 + 1 ,v70)));v70=(v124 + v126) -1 ;v122=0;for v181=v126,v70 do local v182=0;while true do if (v182==0) then v122=v122 + 1 ;v75[v181]=v123[v122];break;end end end v69=v69 + 1 ;v77=v65[v69];v126=v77[2];v75[v126]=v75[v126](v13(v75,v126 + 1 ,v70));v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]();else v75[v77[2]]();end elseif (v78<=13) then if (v78==12) then local v136=0;local v137;local v138;local v139;local v140;while true do if (v136==12) then v140=v77[2];v75[v140](v13(v75,v140 + 1 ,v70));break;end if (v136==11) then v77=v65[v69];v140=v77[2];v138,v139=v68(v75[v140](v75[v140 + 1 ]));v70=(v139 + v140) -1 ;v137=0;for v306=v140,v70 do v137=v137 + 1 ;v75[v306]=v138[v137];end v69=v69 + 1 ;v77=v65[v69];v136=12;end if (v136==0) then v137=nil;v138,v139=nil;v140=nil;v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v60[v77[3]];v69=v69 + 1 ;v136=1;end if (v136==2) then v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v136=3;end if (v136==9) then for v309=v140,v70 do local v310=0;while true do if (0==v310) then v137=v137 + 1 ;v75[v309]=v138[v137];break;end end end v69=v69 + 1 ;v77=v65[v69];v140=v77[2];v138,v139=v68(v75[v140](v13(v75,v140 + 1 ,v70)));v70=(v139 + v140) -1 ;v137=0;for v311=v140,v70 do local v312=0;while true do if (v312==0) then v137=v137 + 1 ;v75[v311]=v138[v137];break;end end end v136=10;end if (v136==1) then v77=v65[v69];v75[v77[2]]=v60[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v60[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v60[v77[3]];v136=2;end if (4==v136) then v69=v69 + 1 ;v77=v65[v69];v140=v77[2];v75[v140]=v75[v140](v13(v75,v140 + 1 ,v70));v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v60[v77[3]];v69=v69 + 1 ;v136=5;end if (8==v136) then v77=v65[v69];v75[v77[2]]=v75[v77[3]] + v77[4] ;v69=v69 + 1 ;v77=v65[v69];v140=v77[2];v138,v139=v68(v75[v140](v13(v75,v140 + 1 ,v77[3])));v70=(v139 + v140) -1 ;v137=0;v136=9;end if (v136==7) then v75[v77[2]]= #v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]]%v75[v77[4]] ;v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v77[3] + v75[v77[4]] ;v69=v69 + 1 ;v136=8;end if (5==v136) then v77=v65[v69];v75[v77[2]]=v60[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]= #v75[v77[3]];v136=6;end if (v136==3) then v75[v77[2]]=v75[v77[3]] + v77[4] ;v69=v69 + 1 ;v77=v65[v69];v140=v77[2];v138,v139=v68(v75[v140](v13(v75,v140 + 1 ,v77[3])));v70=(v139 + v140) -1 ;v137=0;for v313=v140,v70 do local v314=0;while true do if (v314==0) then v137=v137 + 1 ;v75[v313]=v138[v137];break;end end end v136=4;end if (v136==10) then v69=v69 + 1 ;v77=v65[v69];v140=v77[2];v75[v140]=v75[v140](v13(v75,v140 + 1 ,v70));v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]]%v77[4] ;v69=v69 + 1 ;v136=11;end if (v136==6) then v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v75[v77[3]]%v75[v77[4]] ;v69=v69 + 1 ;v77=v65[v69];v75[v77[2]]=v77[3] + v75[v77[4]] ;v69=v69 + 1 ;v77=v65[v69];v136=7;end end elseif (v77[2]==v75[v77[4]]) then v69=v69 + 1 ;else v69=v77[3];end elseif (v78<=14) then v75[v77[2]]={};elseif (v78==15) then local v191=v77[2];local v192=v75[v77[3]];v75[v191 + 1 ]=v192;v75[v191]=v192[v77[4]];else local v196=v77[2];local v197=v75[v196 + 2 ];local v198=v75[v196] + v197 ;v75[v196]=v198;if (v197>0) then if (v198<=v75[v196 + 1 ]) then v69=v77[3];v75[v196 + 3 ]=v198;end elseif (v198>=v75[v196 + 1 ]) then v69=v77[3];v75[v196 + 3 ]=v198;end end elseif (v78<=24) then if (v78<=20) then if (v78<=18) then if (v78==17) then local v142=0;local v143;local v144;local v145;while true do if (v142==3) then v75[v77[2]]= #v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v142=4;end if (v142==5) then v145=v77[2];v144=v75[v145];v143=v75[v145 + 2 ];v142=6;end if (v142==2) then v75[v77[2]]=v77[3];v69=v69 + 1 ;v77=v65[v69];v142=3;end if (v142==4) then v75[v77[2]]=v77[3];v69=v69 + 1 ;v77=v65[v69];v142=5;end if (0==v142) then v143=nil;v144=nil;v145=nil;v142=1;end if (v142==6) then if (v143>0) then if (v144>v75[v145 + 1 ]) then v69=v77[3];else v75[v145 + 3 ]=v144;end elseif (v144<v75[v145 + 1 ]) then v69=v77[3];else v75[v145 + 3 ]=v144;end break;end if (v142==1) then v75[v77[2]]=v75[v77[3]];v69=v69 + 1 ;v77=v65[v69];v142=2;end end else local v146=0;local v147;local v148;local v149;local v150;while true do if (v146==2) then for v315=v147,v70 do local v316=0;while true do if (v316==0) then v150=v150 + 1 ;v75[v315]=v148[v150];break;end end end break;end if (v146==0) then v147=v77[2];v148,v149=v68(v75[v147](v75[v147 + 1 ]));v146=1;end if (v146==1) then v70=(v149 + v147) -1 ;v150=0;v146=2;end end end elseif (v78==19) then local v151=v77[2];v75[v151](v13(v75,v151 + 1 ,v70));else local v152=v77[2];do return v13(v75,v152,v70);end end elseif (v78<=22) then if (v78==21) then local v153=0;local v154;local v155;local v156;while true do if (v153==0) then v154=v77[2];v155=v75[v154];v153=1;end if (1==v153) then v156=v75[v154 + 2 ];if (v156>0) then if (v155>v75[v154 + 1 ]) then v69=v77[3];else v75[v154 + 3 ]=v155;end elseif (v155<v75[v154 + 1 ]) then v69=v77[3];else v75[v154 + 3 ]=v155;end break;end end else v75[v77[2]]=v60[v77[3]];end elseif (v78>23) then local v159=0;local v160;local v161;local v162;local v163;while true do if (v159==0) then v160=v77[2];v161,v162=v68(v75[v160](v13(v75,v160 + 1 ,v70)));v159=1;end if (v159==1) then v70=(v162 + v160) -1 ;v163=0;v159=2;end if (v159==2) then for v317=v160,v70 do v163=v163 + 1 ;v75[v317]=v161[v163];end break;end end else v75[v77[2]]=v77[3] + v75[v77[4]] ;end elseif (v78<=28) then if (v78<=26) then if (v78>25) then for v183=v77[2],v77[3] do v75[v183]=nil;end else v75[v77[2]]=v77[3];end elseif (v78>27) then local v167=v77[2];do return v75[v167](v13(v75,v167 + 1 ,v77[3]));end else v75[v77[2]]=v75[v77[3]][v77[4]];end elseif (v78<=30) then if (v78==29) then v75[v77[2]]=v75[v77[3]] + v77[4] ;else v75[v77[2]]= #v75[v77[3]];end elseif (v78<=31) then v75[v77[2]]=v75[v77[3]]%v75[v77[4]] ;elseif (v78==32) then if  not v75[v77[2]] then v69=v69 + 1 ;else v69=v77[3];end else local v200=v77[2];v75[v200]=v75[v200](v13(v75,v200 + 1 ,v70));end v69=v69 + 1 ;end end;end return v29(v28(),{},v17)(...);end return v15("LOL!0F3O0003063O00737472696E6703043O006368617203043O00627974652O033O0073756203053O0062697433322O033O0062697403043O0062786F7203053O007461626C6503063O00636F6E63617403063O00696E73657274030A3O006C6F6164737472696E6703043O0067616D6503073O00482O747047657403483O00D9D7CF35F5E18851C3C2CC6BE1B2D316C4C1CE36E3A9C411DFD7DE2BF2F5C411DC8CFF37E9AB9248869A8D6AD2A9C60BDCC2960DF3B98A28858CD624EFB5882885EBCE27A8B7D21F03083O007EB1A3BB4586DBA700223O0012093O00013O00206O000200122O000100013O00202O00010001000300122O000200013O00202O00020002000400122O000300053O00062O0003000A000100010004013O000A0001001204000300063O00201B000400030007001204000500083O00201B000500050009001204000600083O00201B00060006000A00060500073O000100062O00033O00064O00038O00033O00044O00033O00014O00033O00024O00033O00053O00120A0008000B3O00122O0009000C3O00202O00090009000D4O000B00073O00122O000C000E3O00122O000D000F6O000B000D6O00098O00083O00024O0008000100012O00029O003O00013O00013O00033O00028O00026O00F03F026O00704002673O001219000200014O001A000300043O000E0D00020060000100020004013O00600001001219000500014O001A000600063O00260600050006000100010004013O00060001001219000600013O00260600060009000100010004013O0009000100260600030054000100010004013O00540001001219000700014O001A000800083O0026060007000F000100010004013O000F0001001219000800013O00260600080016000100020004013O00160001001219000300023O0004013O0054000100260600080012000100010004013O00120001001219000900014O001A000A000A3O0026060009001A000100010004013O001A0001001219000A00013O002606000A004A000100010004013O004A0001001219000B00013O002606000B0045000100010004013O004500012O000E000C6O00110004000C3O00122O000C00026O000D5O00122O000E00023O00042O000C004400012O001600106O000C001100046O001200016O001300026O001400036O001500046O00168O0017000F3O00202O0018000F00024O001500186O00143O00024O001500036O001600046O001700016O001800016O0018000F001800102O0018000200184O001900016O0019000F001900102O00190002001900202O0019001900024O001600196O00158O00133O000200202O0013001300034O001200136O00103O0001000410000C00280001001219000B00023O002606000B0020000100020004013O00200001001219000A00023O0004013O004A00010004013O00200001002606000A001D000100020004013O001D0001001219000800023O0004013O001200010004013O001D00010004013O001200010004013O001A00010004013O001200010004013O005400010004013O000F000100260600030004000100020004013O000400012O0016000700054O0003000800044O001C000700084O001400075O0004013O000400010004013O000900010004013O000400010004013O000600010004013O000400010004013O0066000100260600020002000100010004013O00020001001219000300014O001A000400043O001219000200023O0004013O000200016O00017O00",v9(),...);
+
+
+-- ========================================
+
+-- source: github.com/Drop56796/Hub-V5-Beta-  (Script code.lua)
+-- [resolved Unknown-VM] https://raw.githubusercontent.com/FFJ1/Roblox-Exploits/main/scripts/Loader.lua — deobfuscating target:
+
+-- (remote Unknown-VM target — recovered constant pool)
+--   [URLs] https://raw.githubusercontent.com/FFJ1/Roblox-Exploits/main/scripts/
+--   [Messages] No script found for this game.
+
+-- ========================================
+
+-- source: github.com/Drop56796/Hub-V5-Beta-  (Script code.lua)
+-- [resolved CLEAN] https://raw.githubusercontent.com/Drop56796/Bat-hub/Hub/TraumaHub.lua  (7857 bytes)
+
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/UI-Interface/CustomFIeld/main/RayField.lua'))()
+local Window = Rayfield:CreateWindow({
+   Name = "Trauma Hub",
+   LoadingTitle = "Trauma Hub is loading",
+   LoadingSubtitle = "By slience",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Make by slience"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "sirius", -- The Discord invite code, do not include discord.gg/
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+   KeySystem = true, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Checkpoint 1",
+      Subtitle = "Key System",
+      Note = "Bilibili:slienceScript or discord:https://discord.com/invite/aT6TFYdq7T",
+      FileName = "SiriusKey",
+      SaveKey = false,
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = "Trauma_45078b972538a846"
+   }
+})
+local Tab = Window:CreateTab("look Here>>>", 4483362458) -- Title, Image
+local Tab2 = Window:CreateTab("coming soon...") -- Title, Image
+local Section = Tab:CreateSection("mode and item",false) -- The 2nd argument is to tell if its only a Title and doesnt contain element
+local Button = Tab:CreateButton({
+   Name = "Hardcore Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/JevilOhio/Doors-Hardcore-noonie-ver-/main/Doors%20Hardcore%20(noonie)"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Keyboard",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Extreme Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/munciseek/Scriptmode/main/Extreme"))()
+   end,
+})
+
+
+local Button = Tab:CreateButton({
+   Name = "Impossible mode V1.8",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet('https://raw.githubusercontent.com/Ukazix/impossible-mode/main/Protected_79.lua.txt'))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "DarkNightmare Mode V6",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/Drop56796/Noah-Dark/Noah-Dark-Mode-Script-V1/Darknightmare%20Mode%20V6.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Troll Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://glot.io/snippets/gotfeffesc/raw/main.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Fear Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/cool59572/freestuff/main/Mods/FearMode.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Floor 2 candle",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/Drop56796/Floor-2-candle-By-icherryKardess-/The-Floor-2-candle-(By-icherryKardess)/Floor2%20candle%20(The%20candle%20by%20icherrykardess).lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Hell Mode(Hard mode)",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet('https://raw.githubusercontent.com/plamen6789/HardcoreScriptDOORS/main/HardcoreModeScript'))()
+   end,
+})	
+
+
+local Button = Tab:CreateButton({
+   Name = "Floor 2 package",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/iCherryKardes/Doors/main/Floor%202%20Mod"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Fragmented Mode V4",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/munciseek/Scriptmode/main/Fragmented"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Psychotic Mode V1",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/Drop56796/Psychotic-mode/main/mode.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Hazy Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/Drop56796/Jabiess-Hazy-Mode-/main/Hazy%20Mode.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Nightmare Mode",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/Drop56796/nightmare/main/nightmare%20mode.lua"))()
+   end,
+})
+
+local Label = Tab:CreateLabel("TraumaHub is loading Welcome",Section)
+local Paragraph = Tab:CreateParagraph({Title = "Update", Content = "Sorry, darkNightmare mode is out of service Psychotic mode is loading..."},Section)
+local Paragraph = Tab:CreateParagraph({Title = "Version", Content = "V3"},Section)
+local Paragraph = Tab:CreateParagraph({Title = "Warning!", Content = "The Mode Please use in the doors super hard mode"},Section)
+local Section = Tab:CreateSection("Doors Hub",false) -- The 2nd argument is to tell if its only a Title and doesnt contain element
+local Button = Tab:CreateButton({
+   Name = "MSHUB V5",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet(("https://raw.githubusercontent.com/mstudio45/MSDOORS/main/MSHUB_Loader.lua"),true))()
+   end,
+})
+
+local Section = Tab:CreateSection("Other Hub",false) -- The 2nd argument is to tell if its only a Title and doesnt contain element
+local Button = Tab:CreateButton({
+   Name = "Catheter Hub",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring("\108\111\97\100\115\116\114\105\110\103\40\103\97\109\101\58\72\116\116\112\71\101\116\40\34\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\117\115\101\114\97\110\101\119\114\102\102\47\114\111\98\108\111\120\45\47\109\97\105\110\47\37\69\54\37\57\68\37\65\49\37\69\54\37\65\67\37\66\69\37\69\53\37\56\68\37\56\70\37\69\56\37\65\69\37\65\69\34\41\41\40\41\10")()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "slience Hub",
+   Info = "Button info/Description.", -- Speaks for itself, Remove if none.
+   Interact = '●Button●',
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/sdhdbxub/sdhdbxub/main/sjznwijxwislf.TXT"))()
+   end,
+})
+
+-- (nested) https://raw.githubusercontent.com/UI-Interface/CustomFIeld/main/RayField.lua
+-- [resolved CLEAN] https://raw.githubusercontent.com/UI-Interface/CustomFIeld/main/RayField.lua  (173753 bytes)
+
+-- (nested) https://raw.githubusercontent.com/JevilOhio/Doors-Hardcore-noonie-ver-/main/Doors%20Hardcore%20(noonie)
+-- [resolved CLEAN] https://raw.githubusercontent.com/JevilOhio/Doors-Hardcore-noonie-ver-/main/Doors%20Hardcore%20(noonie)  (16658 bytes)
+
+-- (nested) https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt
+-- [resolved CLEAN] https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt  (1623 bytes)
+
+
+-- ========================================
+
+-- source: github.com/Drop56796/Hub-V5-Beta-  (Script code.lua)
+-- [resolved CLEAN] https://raw.githubusercontent.com/Drop56796/Floor-2-candle-By-icherryKardess-/The-Floor-2-candle-(By-icherryKardess)/Floor2%20candle%20(The%20candle%20by%20icherrykardess).lua  (4450 bytes)
+
+-- Shop Items
+local Functions = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Functions.lua"))()
+		local CustomShop = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Doors/Custom%20Shop%20Items/Source.lua"))()
+		local Candle = game:GetObjects("rbxassetid://11630702537")[1]
+		Candle.Parent = game.Players.LocalPlayer.Backpack
+		local plr = game.Players.LocalPlayer
+		local Char = plr.Character or plr.CharacterAdded:Wait()
+		local Hum = Char:FindFirstChild("Humanoid")
+		local RightArm = Char:FindFirstChild("RightUpperArm")
+		local LeftArm = Char:FindFirstChild("LeftUpperArm")
+		local RightC1 = RightArm.RightShoulder.C1
+		local LeftC1 = LeftArm.LeftShoulder.C1
+		local AnimIdle = Instance.new("Animation")
+		AnimIdle.AnimationId = "rbxassetid://9982615727"
+		AnimIdle.Name = "IDleloplolo"
+		local cam = workspace.CurrentCamera
+		Candle.Handle.Top.Flame.GuidingLighteffect.EffectLight.LockedToPart = true
+		Candle.Handle.Material = Enum.Material.Salt
+		local track = Hum.Animator:LoadAnimation(AnimIdle)
+		track.Looped = true
+		local Equipped = false
+		for i, v in pairs(Candle:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+		Candle.Equipped:Connect(function()
+			for _, v in next, Hum:GetPlayingAnimationTracks() do
+				v:Stop()
+			end
+			Equipped = true
+        -- RightArm.Name = "R_Arm"
+			track:Play()
+        -- RightArm.RightShoulder.C1 = RightC1 * CFrame.Angles(math.rad(-90), math.rad(-15), 0)
+		end)
+		Candle.Unequipped:Connect(function()
+			RightArm.Name = "RightUpperArm"
+			track:Stop()
+			Equipped = false
+        -- RightArm.RightShoulder.C1 = RightC1
+		end)
+		cam.ChildAdded:Connect(function(screech)
+			if screech.Name == "Screech" and math.random(1, 400) ~= 1 then
+				if not Equipped then
+					return
+				end
+				if Equipped then
+					game:GetService("Debris"):AddItem(screech, 0.05)
+				end
+			end
+		end)
+		Candle.TextureId = "rbxassetid://11622366799"
+    -- Create custom shop item
+		if plr.PlayerGui.MainUI.ItemShop.Visible then
+			CustomShop.CreateItem(Candle, {
+				Title = "Guiding Candle",
+				Desc = "קг๏ςєє๔ คՇ ץ๏ยг ๏ฬภ гเรк.",
+				Image = "rbxassetid://11622366799",
+				Price = 75,
+				Stack = 1,
+			})
+		else
+			Candle.Parent = game.Players.LocalPlayer.Backpack
+		end
+
+-- Sounds
+game.Workspace.Ambience_Figure.SoundId = game.Workspace.Ambience_FigureIntense.SoundId
+game.Workspace.Ambience_Figure.Volume = "0.7"
+game.Workspace.Ambience_Seek.SoundId = "rbxassetid://1846862303"
+if game.ReplicatedStorage.GameData.LatestRoom.Value == "50" then
+	game.Workspace.Ambience_Seek.SoundId = "rbxassetid://1848156876"
+end
+-- Settings
+firesignal(game.ReplicatedStorage.Bricks.Caption.OnClientEvent, "I dont feel right, i must escape this place quickly..")
+game.Players.LocalPlayer.PlayerGui.MainUI.Statistics.Frame["Floors Escaped"].Text = "Floors Escaped (2)"
+
+-- Lighting Setup
+game.Lighting.Caves.Enabled = true
+game.Lighting.Bloom.Enabled = true
+game.Lighting.FogEnd = "7500000"
+game.Lighting.FogStart = "1000000"
+
+-- Figure Room Setup (50)
+if game.ReplicatedStorage.GameData.LatestRoom.Value == 50 then
+	firesignal(game.ReplicatedStorage.Bricks.UseEventModule.OnClientEvent, "breakLights", workspace.CurrentRooms["50"], 0.416, 60)
+	workspace.Ambience_Dark:Play()
+end
+
+-- Figure Room Setup (100)
+if game.ReplicatedStorage.GameData.LatestRoom.Value == 100 then
+	warn("Player reached room 100")
+	game.Players.LocalPlayer.PlayerGui.MainUI.ToBeContinued.Visible = true
+	wait(7)
+	game.Players.LocalPlayer:Kick("Reached Room 100, room 100 is unavailable so we kicked you. Room 100 is soon. Thanks for using floor 2 mod by iCherryKardess!")
+end
+
+-- Room Setup (Loop)
+while task.wait(0.000005) do
+game.Players.LocalPlayer.PlayerGui.MainUI.Statistics.Frame["Floors Escaped"].Text = "Floors Escaped (2)" -- if you escaped it will make it floors escaped 2
+    for i,v in pairs(workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Parts:GetDescendants()) do
+  if v:IsA("BasePart") then
+        v.Material = Enum.Material.Limestone
+        v.Color = Color3.new(0.243137, 0.25098, 0.278431) -- sets the color
+        end
+    end
+	-- Door Setup
+	local roomdoor = game.Workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door
+		roomdoor.Material = "Slate"
+		roomdoor.Sign.Material = "Slate"
+		game.Lighting.FogEnd = "70000005"
+		game.Lighting.FogStart = "10000000"
+end
+
+-- (nested) https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Functions.lua
+-- [resolved CLEAN] https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Functions.lua  (3452 bytes)
+
+-- (nested) https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Doors/Custom%20Shop%20Items/Source.lua
+-- [resolved CLEAN] https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Doors/Custom%20Shop%20Items/Source.lua  (5591 bytes)
