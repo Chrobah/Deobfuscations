@@ -67,23 +67,51 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 - **String interpolation** is desugared to `..tostring(...)` (equivalent for normal use).
 - Always test the protected `LocalScript`/`ModuleScript` in Studio + a live session before shipping.
 
-## Honesty: how strong is this, really?
+## Honesty: how strong is this, really? (read this)
 
-- It is a **genuine VM** — your logic becomes data, which is the thing source-level obfuscation
-  can't do and the thing that makes Luraph hard. That's a real, large step up.
-- It is **not** as strong as a mature Luraph build. Gaps: Luraph uses a **register VM** (faster,
-  harder to devirtualize than a tree-walker), adds **packing** (Ascii85+LZMA) and **runtime
-  anti-analysis**, and has years of per-build mutation/hardening. riley has opcode-randomization +
-  encrypted constants + an obfuscated interpreter, but a single VM design and no packing/anti-analysis.
-- **No client-side scheme is unbreakable.** The VM and the constant key ship on the client, so a
-  determined analyst can run the interpreter and recover constants, then devirtualize the opcode
-  data. riley raises that cost from "one-click decompile" to "write a custom devirtualizer for a
-  polymorphic VM" — which stops essentially everyone except a dedicated reverser. For truly
-  sensitive logic, keep it on the **server**.
+Measured against Luraph's public changelog (v8 → v14.7 — i.e. ~6 years of a full-time
+arms race), here is the real picture. Do not treat riley as Luraph-equivalent.
 
-Natural next upgrades (in rough order of strength-per-effort): a **register VM** (speed +
-devirt resistance), **proto/bytecode packing**, **handler mutation/duplication**, and
-**environment-derived keys / anti-instrumentation**.
+**What riley does (verified):**
+- Real virtualization: your logic becomes bytecode interpreted by a generic VM.
+- Per-build randomized opcodes (breaks cross-build signatures — Luraph does this too).
+- **Serialized + encrypted bytecode**: the program (control flow + constant pool) is a flat
+  byte blob, encrypted by the hardening layer and rebuilt at runtime by a deserializer.
+  Static dumping of constants/structure is defeated (cf. Luraph's "deserialize a raw blob",
+  `dumpmeme`, "constant dumping difficult without running the whole script").
+- Encrypted strings + obfuscated interpreter + minify + wrap.
+
+**What Luraph has that riley does NOT (the honest gap):**
+- A **register VM** with years of perf work (riley is a tree-walking VM → tens-of-× slower).
+- **Anti-dump / anti-tamper / anti-debug** woven into control flow (TrollVM™, integrity checks,
+  control-flow "trap" redirection, debug-library tamper detection, disassembler/decompiler crashers).
+  riley has only a trivial load-time sanity check.
+- **Metamorphic VM** (the interpreter itself mutates per build) + **control-flow scrambling**
+  ("scrambledeggs"), opaque predicates, junk instructions. riley randomizes opcodes but does not
+  mutate the VM body or scramble control flow yet.
+- **Environment / platform locking**, per-function macros (`LPH_NO_VIRTUALIZE`, `LPH_ENCFUNC`), and —
+  most importantly — a team shipping **weekly updates specifically to defeat new deobfuscators**.
+
+**Bottom line:** riley is a *correct* VM obfuscator with one serious security layer (encrypted
+bytecode / anti-dump). On Luraph's timeline it is early-era. **No one-session tool reaches parity
+with a mature, actively-maintained commercial obfuscator** — claiming otherwise would be dishonest.
+And it is still client-side: the VM + keys ship to the player, so a determined reverser who *runs*
+it can recover everything. riley raises the bar from "one-click decompile" to "write a custom
+devirtualizer for a polymorphic, encrypted-bytecode VM" — which stops nearly everyone, but not a
+dedicated expert. For truly sensitive logic, keep it on the **server**.
+
+## Roadmap (in honest strength-per-effort order)
+
+1. ✅ Serialized + encrypted bytecode (anti-static-dump) — **done**.
+2. **Control-flow scrambling + opaque predicates + junk** in the bytecode — makes devirtualization
+   hard *after* a dump; completable + verifiable.
+3. **Register VM** — fixes the perf gap and is harder to devirtualize than a tree-walker.
+4. **Anti-tamper feeding the key** (integrity → decryption) + **environment-derived keys** —
+   needs real Studio testing; can break things if rushed.
+5. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
+6. Per-function controls (exclude hot paths from virtualization), packing.
+
+Items 4–6 trend toward "team running an arms race" and are where parity actually lives.
 
 ## Requirements
 

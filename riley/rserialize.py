@@ -2,6 +2,43 @@
 import sys
 from rcompile import compile_src
 
+import struct
+def _uvarint(n):
+    out=bytearray()
+    while True:
+        b=n&0x7f; n>>=7
+        if n: out.append(b|0x80)
+        else: out.append(b); break
+    return bytes(out)
+def _zig(n): return _uvarint((n<<1) ^ (n>>63) if n>=0 else ((-n)<<1)-1)
+def _ser(v, out):
+    if isinstance(v,bool):
+        out.append(2); out+= _uvarint((1<<1) if v else 0)   # bool as int 1/0
+    elif isinstance(v,int):
+        out.append(2); out+= _uvarint((v<<1) if v>=0 else ((-v)<<1)|1)
+    elif isinstance(v,float):
+        out.append(3); out+= struct.pack('<d', v)
+    elif isinstance(v,(bytes,bytearray)):
+        out.append(4); out+= _uvarint(len(v)); out+= bytes(v)
+    elif isinstance(v,str):
+        b=v.encode(); out.append(4); out+= _uvarint(len(b)); out+= b
+    elif isinstance(v,(list,tuple)):
+        out.append(1); out+= _uvarint(len(v))
+        for e in v: _ser(e,out)
+    elif v is None:
+        out.append(2); out+= _uvarint(0)
+    else:
+        raise Exception("ser? "+repr(type(v)))
+    return out
+def serialize_program(prog):
+    protos=[]
+    for p in prog['protos']:
+        protos.append([p['params'], 1 if p['vararg'] else 0, p['body']])
+    out=bytearray()
+    _ser([protos, prog['consts']], out)
+    return bytes(out)
+
+
 def lua_str(b):
     if isinstance(b,str): b=b.encode()
     out=['"']
@@ -42,13 +79,30 @@ def emit_proto(p):
 
 OPNAMES=['NIL','TRUE','FALSE','NUM','STR','VARARG','LOCAL','GLOBAL','INDEX','CALL','METHOD','FUNC','TABLE','BINOP','UNOP','AND','OR','IFEXPR','PAREN','LOCALDECL','ASSIGN','COMPOUND','CALLSTAT','DO','WHILE','REPEAT','IF','FORNUM','FORIN','RETURN','BREAK','CONTINUE']
 
+DESER = """local function _deser(s)
+ local pos=1; local byte=string.byte; local sub=string.sub; local unpack=string.unpack
+ local function uv() local r,sh=0,0 while true do local b=byte(s,pos);pos=pos+1;r=r+(b%128)*(2^sh);if b<128 then break end;sh=sh+7 end return r end
+ local function rd()
+  local t=byte(s,pos);pos=pos+1
+  if t==1 then local n=uv();local a={};for i=1,n do a[i]=rd() end;return a
+  elseif t==2 then local u=uv();if u%2==1 then return -((u-1)/2)-1 else return u/2 end
+  elseif t==3 then local v=unpack("<d",s,pos);pos=pos+8;return v
+  else local n=uv();local b=sub(s,pos,pos+n-1);pos=pos+n;return b end
+ end
+ return rd()
+end
+local _prog=_deser(BLOB)
+local _pl=_prog[1]; local K=_prog[2]
+local PROTOS={}
+for i=1,#_pl do local p=_pl[i] PROTOS[i]={params=p[1],vararg=p[2]==1,body=p[3]} end
+"""
+
 def emit_program(prog, vmtext, opmap):
-    protos='{'+','.join(emit_proto(p) for p in prog['protos'])+'}'
-    consts='{'+','.join(lua_str(c) for c in prog['consts'])+'}'
+    blob=serialize_program(prog)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g), g) for g in prog['globals'])+'}'
     opline='local '+','.join(OPNAMES)+'='+','.join(str(opmap[n]) for n in OPNAMES)
     vmtext=vmtext.replace('--@OPCODES@', opline)
-    header='local PROTOS=%s\nlocal K=%s\nlocal G=%s\n'%(protos,consts,gcap)
+    header=('local BLOB=%s\n%s\nlocal G=%s\n' % (lua_str(blob), DESER.replace('BLOB','BLOB',1), gcap))
     return header+vmtext
 
 def serialize(src, vmtext):
