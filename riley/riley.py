@@ -6,11 +6,18 @@ Pipeline:  your code --[parse]--> AST --[compile]--> bytecode + constant pool
 A decompiler now sees the interpreter and an opaque data blob, not your logic.
 """
 import argparse, sys, random
-import rcompile, rserialize, luaobf, scramble as scrambler
+import rcompile, rserialize, luaobf, scramble as scrambler, rvmreg_gen
 
-def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble_level=1.0):
+def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble_level=1.0, register=False):
     rng = random.Random(seed if seed is not None else random.randrange(1<<31))
     import os
+    if register:
+        # register-machine VM: flat per-proto bytecode, per-build randomized opcodes
+        virt = rvmreg_gen.generate(src, rng)
+        if not harden:
+            return virt
+        return luaobf.obfuscate(virt, seed=rng.randrange(1<<31), place_lock=place_lock,
+                                minify=True, anti_tamper=anti_tamper, do_index=True)
     vm = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'rvm.luau')).read()
     # per-build opcode randomization (polymorphism)
     vals = rng.sample(range(3, 240), len(rserialize.OPNAMES))
@@ -35,11 +42,12 @@ def main():
     ap.add_argument('--place-lock', type=int, default=0)
     ap.add_argument('--anti-tamper', action='store_true')
     ap.add_argument('--scramble', type=float, default=1.0, help='control-flow scramble intensity 0..2 (default 1)')
+    ap.add_argument('--register', action='store_true', help='use the register-machine VM (faster, flatter bytecode)')
     ap.add_argument('--no-harden', action='store_true', help='emit the raw VM (debug)')
     ap.add_argument('--verify', action='store_true')
     a=ap.parse_args()
     out=build(open(a.input,encoding='utf-8').read(), seed=a.seed,
-              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden, scramble_level=a.scramble)
+              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden, scramble_level=a.scramble, register=a.register)
     if a.output: open(a.output,'w',encoding='utf-8').write(out)
     else: sys.stdout.write(out)
     if a.verify:

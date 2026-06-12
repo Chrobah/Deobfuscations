@@ -68,7 +68,7 @@ def lex(src):
             while j<n and (src[j].isalnum() or src[j]=='_'): j+=1
             w=src[i:j]
             toks.append(Tok('KW' if w in KEYWORDS else 'NAME', w, i)); i=j; continue
-        for op in ('...','..=','//=','<<','>>','==','~=','<=','>=','..','::','+=','-=','*=','/=','%=','^=','->'):
+        for op in ('...','..=','//=','//','<<','>>','==','~=','<=','>=','..','::','+=','-=','*=','/=','%=','^=','->'):
             if src.startswith(op,i): toks.append(Tok('OP',op,i)); i+=len(op); break
         else:
             toks.append(Tok('OP',c,i)); i+=1

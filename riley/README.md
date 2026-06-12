@@ -49,19 +49,39 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 ```
 --seed N         deterministic, reproducible build (also fixes the random opcode map). Omit = random.
 --place-lock ID  bind the encrypted constants to a Roblox PlaceId (stolen copy decrypts to garbage elsewhere).
---anti-tamper    weave a bytecode-blob integrity check into execution (tamper -> derail).
---scramble F     control-flow scramble intensity (0=off, 1=default, 2=heavy).
+--anti-tamper    weave a bytecode-blob integrity check into execution (tamper -> derail). (tree-walker)
+--scramble F     control-flow scramble intensity (0=off, 1=default, 2=heavy). (tree-walker)
+--register       use the register-machine VM instead of the tree-walker (flatter bytecode, ~1.5x faster).
 --no-harden      emit the raw VM without the luaobf encryption layer (for debugging).
 --verify         compile-check the output with luau-compile.
 ```
 
+## Two VMs
+
+riley can target either of two virtual machines:
+
+- **Tree-walker (default)** — the program is serialized to an **encrypted byte blob** and rebuilt
+  at runtime; supports `--scramble` (control-flow scrambling) and `--anti-tamper`. Strongest
+  anti-dump; slower.
+- **Register machine (`--register`)** — your code is compiled to a flat, register-based instruction
+  stream (a real bytecode with jumps, like Lua's own VM) with capture-analysed local boxing.
+  Harder to devirtualize than the recursive tree, and ~1.5× faster. Currently ships hardened
+  (per-build randomized opcodes + encrypted constants + obfuscated/minified interpreter) but the
+  instruction stream is **inline**, not yet blob-serialized — so its static-dump resistance is a
+  notch below the tree-walker's. Blob-serialization + scrambling for the register VM are the next step.
+
+Both VMs are verified behaviour-identical to native on the same suite (locals/closures/upvalues,
+multi-return, varargs, metatables, all control flow), plus a 700-program differential fuzzer for
+the register VM.
+
 ## Not supported / caveats (read before shipping)
 
 - **`goto` / labels** → riley errors out (won't silently miscompile). Rewrite with `if`/`while`/`continue`.
-- **Performance**: it's a tree-walking VM, so compute-heavy code runs *tens of times* slower
-  (≈70× on a tight `fib`+loop benchmark). For event-driven game logic (UI, remotes, input)
-  this is unnoticeable; **do not virtualize per-frame hot math loops** — leave those as plain
-  `LocalScript`s and only run riley on the logic you care about hiding.
+- **Performance**: it's an interpreter, so compute-heavy code runs *tens of times* slower
+  (≈70× for the tree-walker, ≈47× for `--register`, on a tight `fib`+loop benchmark). For
+  event-driven game logic (UI, remotes, input) this is unnoticeable; **do not virtualize per-frame
+  hot math loops** — leave those as plain `LocalScript`s and only run riley on the logic you care
+  about hiding. (No Lua-in-Lua VM approaches native — that's inherent, not a riley limitation.)
 - **Globals are snapshotted** at start into a captured table (reads see the startup value; writes
   stay internal to the script). Fine for normal client code; don't use riley on a script whose
   job is to mutate a shared global that *other* scripts read.
@@ -82,19 +102,24 @@ arms race), here is the real picture. Do not treat riley as Luraph-equivalent.
   `dumpmeme`, "constant dumping difficult without running the whole script").
 - Encrypted strings + obfuscated interpreter + minify + wrap.
 
-**What Luraph has that riley does NOT (the honest gap):**
-- A **register VM** with years of perf work (riley is a tree-walking VM → tens-of-× slower).
-- **Anti-dump / anti-tamper / anti-debug** woven into control flow (TrollVM™, integrity checks,
-  control-flow "trap" redirection, debug-library tamper detection, disassembler/decompiler crashers).
-  riley has only a trivial load-time sanity check.
-- **Metamorphic VM** (the interpreter itself mutates per build) + **control-flow scrambling**
-  ("scrambledeggs"), opaque predicates, junk instructions. riley randomizes opcodes but does not
-  mutate the VM body or scramble control flow yet.
+**What riley now also has (since the first cut):**
+- **Control-flow scrambling** (`--scramble`): opaque-predicate-guarded dead branches + junk.
+- **Anti-tamper** (`--anti-tamper`): a blob checksum woven into entry selection (tamper → derail).
+- A **register VM** (`--register`): flat register bytecode with capture-analysed local boxing.
+
+**What Luraph has that riley still does NOT (the honest gap):**
+- A register VM with **years of perf work**. riley's exists and is ~1.5× faster than its tree-walker,
+  but it's still a hosted interpreter (tens-of-× slower than native) and not yet blob-serialized.
+- **Anti-debug / decompiler-crashers** and trap-redirected control flow (TrollVM™, debug-library
+  tamper detection). riley's anti-tamper is a single woven integrity check, and client-side.
+- **Metamorphic VM** — the interpreter body itself mutating per build. riley randomizes opcodes
+  (both VMs) and scrambles the tree-walker's control flow, but does not yet mutate the VM body.
 - **Environment / platform locking**, per-function macros (`LPH_NO_VIRTUALIZE`, `LPH_ENCFUNC`), and —
   most importantly — a team shipping **weekly updates specifically to defeat new deobfuscators**.
 
-**Bottom line:** riley is a *correct* VM obfuscator with one serious security layer (encrypted
-bytecode / anti-dump). On Luraph's timeline it is early-era. **No one-session tool reaches parity
+**Bottom line:** riley is a *correct* two-VM obfuscator with real security layers (encrypted
+bytecode / anti-dump, control-flow scrambling, woven anti-tamper). On Luraph's timeline it is
+early-era. **No one-session tool reaches parity
 with a mature, actively-maintained commercial obfuscator** — claiming otherwise would be dishonest.
 And it is still client-side: the VM + keys ship to the player, so a determined reverser who *runs*
 it can recover everything. riley raises the bar from "one-click decompile" to "write a custom
@@ -109,12 +134,15 @@ dedicated expert. For truly sensitive logic, keep it on the **server**.
 3. ✅ **Anti-tamper** — a checksum of the bytecode blob woven into entry-proto selection
    (`--anti-tamper`): tamper the blob and it derails instead of running modified. (Client-side, so
    inherently limited — an attacker who controls the runtime can still hook around it.)
-4. ⏳ **Register VM** — fixes the perf gap and is harder to devirtualize than a tree-walker.
-5. **Environment-derived keys** — needs real Studio testing; can break things if rushed.
-5. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
-6. Per-function controls (exclude hot paths from virtualization), packing.
+4. ✅ **Register VM** (`--register`) — flat register bytecode (a real instruction stream with jumps),
+   capture-analysed local boxing, per-build randomized opcodes. Harder to devirtualize than the
+   recursive tree and ~1.5× faster. Verified behaviour-identical (suite + 700-program fuzzer).
+5. ⏳ **Blob-serialize + scramble the register VM** — bring its anti-dump up to the tree-walker's.
+6. **Environment-derived keys** — needs real Studio testing; can break things if rushed.
+7. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
+8. Per-function controls (exclude hot paths from virtualization), packing.
 
-Items 4–6 trend toward "team running an arms race" and are where parity actually lives.
+Items 5–8 trend toward "team running an arms race" and are where parity actually lives.
 
 ## Requirements
 
