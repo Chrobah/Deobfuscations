@@ -1,47 +1,116 @@
-# Emit a standalone Luau register-VM interpreter with the program inlined (for correctness testing).
-import rasm
+# Emit a standalone Luau register-VM interpreter.
+# The program (protos + constant pool) is serialized to a flat byte blob and rebuilt at
+# runtime by a deserializer -- so static dumping of the bytecode/constants is defeated,
+# matching the tree-walker's anti-dump. Constants are strings; instruction args use a
+# correct signed (zig-zag) varint (the register VM uses -1 sentinels for multret).
+import rasm, struct
+
 def lua_str(b):
     if isinstance(b,str): b=b.encode()
     out=[]
     for x in b:
         if x==92: out.append('\\\\')
         elif x==34: out.append('\\"')
-        elif x==10: out.append('\\n')
-        elif x==13: out.append('\\r')
-        elif x==9: out.append('\\t')
         elif 32<=x<127: out.append(chr(x))
-        else: out.append('\\%d'%x)
+        else: out.append('\\%03d'%x)   # 3-digit padded so a following digit char cannot merge into the escape
     return '"'+''.join(out)+'"'
-def emit_val(v):
-    if isinstance(v,(int,)) and not isinstance(v,bool): return repr(v)
-    if isinstance(v,float):
-        if v!=v: return '(0/0)'
-        if v==float('inf'): return 'math.huge'
-        if v==float('-inf'): return '-math.huge'
-        return repr(v)
-    if isinstance(v,str): return lua_str(v)
-    raise Exception('val')
-def emit_ins(ins):
-    parts=[]
-    for x in ins:
-        if x is None: parts.append('0')
-        elif isinstance(x,str): parts.append(lua_str(x))
-        else: parts.append(str(x))
-    return '{'+','.join(parts)+'}'
-def emit_proto(p):
-    code='{'+','.join(emit_ins(i) for i in p['code'])+'}'
-    ups='{'+','.join('{'+lua_str(s[0])+','+str(s[1])+'}' for s in p['upvals'])+'}'
-    bp='{'+','.join('true' if b else 'false' for b in p['boxedp'])+'}'
-    return '{code=%s,nreg=%d,params=%d,vararg=%s,upvals=%s,boxedp=%s}'%(code,p['nreg'],p['params'],
-            'true' if p['vararg'] else 'false', ups, bp)
 
-VM=r'''
-local protos=__PROTOS__
-local K=__CONSTS__
-local G=__GLOBALS__
-local unpack=table.unpack or unpack
+def serialize_reg(prog):
+    out=bytearray()
+    def uv(n):
+        while True:
+            b=n&0x7f; n>>=7
+            out.append(b|0x80 if n else b)
+            if not n: break
+    def sv(n): uv(2*n if n>=0 else -2*n-1)         # zig-zag
+    def st(b):
+        if isinstance(b,str): b=b.encode()
+        uv(len(b)); out.extend(b)
+    uv(len(prog['consts']))
+    for c in prog['consts']: st(c)
+    uv(len(prog['protos']))
+    for p in prog['protos']:
+        uv(p['nreg']); uv(p['params']); uv(1 if p['vararg'] else 0)
+        uv(len(p['code']))
+        for ins in p['code']:
+            uv(len(ins))
+            for a in ins:
+                if isinstance(a, float):
+                    out.append(1); out.extend(struct.pack('<d', a))
+                else:
+                    out.append(0); sv(a)
+        uv(len(p['upvals']))
+        for tag,idx in p['upvals']:
+            uv(0 if tag=='local' else 1); uv(idx)
+        uv(len(p['boxedp']))
+        for b in p['boxedp']: uv(1 if b else 0)
+    return bytes(out)
+
+DESER = r'''local function _deser(s)
+ local pos=1; local byte=string.byte; local sub=string.sub
+ local function uv() local r,sh=0,0 while true do local b=byte(s,pos);pos=pos+1;r=r+(b%128)*2^sh;if b<128 then break end;sh=sh+7 end return r end
+ local function sv() local u=uv() if u%2==0 then return u/2 else return -(u+1)/2 end end
+ local function st() local n=uv();local b=sub(s,pos,pos+n-1);pos=pos+n;return b end
+ local K={}; local nc=uv(); for i=1,nc do K[i]=st() end
+ local protos={}; local np=uv()
+ for i=1,np do
+  local nreg=uv(); local params=uv(); local vararg=uv()==1
+  local nins=uv(); local code={}
+  for j=1,nins do local k=uv(); local ins={}; for a=1,k do
+    local tg=byte(s,pos); pos=pos+1
+    if tg==0 then ins[a]=sv() else local v;v,pos=string.unpack("<d",s,pos);ins[a]=v end
+   end; code[j]=ins end
+  local nu=uv(); local upvals={}
+  for j=1,nu do upvals[j]={uv(),uv()} end
+  local nb=uv(); local boxedp={}
+  for j=1,nb do boxedp[j]=uv() end
+  protos[i]={code=code,nreg=nreg,params=params,vararg=vararg,upvals=upvals,boxedp=boxedp}
+ end
+ return protos,K
+end
+local protos,K=_deser(BLOB)
+'''
+
+# dispatch order: hottest opcodes first (the if/elseif chain is checked top-down)
+HOT=['MOVE','GETLOCAL','SETLOCAL','LOADN','LOADK','CALL','RET','JF','JMP','JT',
+     'ADD','SUB','MUL','LT','LE','EQ','GETTABLE','SETTABLE','GETGLOBAL','GETUPVAL',
+     'SETUPVAL','NEWLOCAL','SELF','NEWTABLE','SETLIST','LOADNIL','LOADB','SETGLOBAL',
+     'DIV','IDIV','MOD','POW','CONCAT','NE','NOT','UNM','LEN','BAND','BOR','BXOR',
+     'SHL','SHR','BNOT','VARARG','CLOSURE']
+
+BODY={
+'LOADK':'R[ins[2]]=K[ins[3]]','LOADN':'R[ins[2]]=ins[3]','LOADB':'R[ins[2]]=(ins[3]==1)',
+'LOADNIL':'R[ins[2]]=nil','MOVE':'R[ins[2]]=R[ins[3]]','GETLOCAL':'R[ins[2]]=R[ins[3]][1]',
+'SETLOCAL':'R[ins[2]][1]=R[ins[3]]','NEWLOCAL':'R[ins[2]]={R[ins[3]]}','GETUPVAL':'R[ins[2]]=U[ins[3]][1]',
+'SETUPVAL':'U[ins[2]][1]=R[ins[3]]','GETGLOBAL':'R[ins[2]]=G[K[ins[3]]]','SETGLOBAL':'G[K[ins[2]]]=R[ins[3]]',
+'GETTABLE':'R[ins[2]]=R[ins[3]][R[ins[4]]]','SETTABLE':'R[ins[2]][R[ins[3]]]=R[ins[4]]','NEWTABLE':'R[ins[2]]={}',
+'SETLIST':'local t=R[ins[2]];local st_=ins[3];local cnt=ins[4];local base=ins[5];if cnt==-1 then cnt=top-base end;for i=1,cnt do t[st_+i-1]=R[base+i-1] end',
+'ADD':'R[ins[2]]=R[ins[3]]+R[ins[4]]','SUB':'R[ins[2]]=R[ins[3]]-R[ins[4]]','MUL':'R[ins[2]]=R[ins[3]]*R[ins[4]]',
+'DIV':'R[ins[2]]=R[ins[3]]/R[ins[4]]','IDIV':'R[ins[2]]=R[ins[3]]//R[ins[4]]','MOD':'R[ins[2]]=R[ins[3]]%R[ins[4]]',
+'POW':'R[ins[2]]=R[ins[3]]^R[ins[4]]','CONCAT':'R[ins[2]]=R[ins[3]]..R[ins[4]]',
+'BAND':'R[ins[2]]=bit32.band(R[ins[3]],R[ins[4]])','BOR':'R[ins[2]]=bit32.bor(R[ins[3]],R[ins[4]])',
+'BXOR':'R[ins[2]]=bit32.bxor(R[ins[3]],R[ins[4]])','SHL':'R[ins[2]]=bit32.lshift(R[ins[3]],R[ins[4]])',
+'SHR':'R[ins[2]]=bit32.rshift(R[ins[3]],R[ins[4]])','BNOT':'R[ins[2]]=bit32.bnot(R[ins[3]])',
+'EQ':'R[ins[2]]=(R[ins[3]]==R[ins[4]])','NE':'R[ins[2]]=(R[ins[3]]~=R[ins[4]])',
+'LT':'R[ins[2]]=(R[ins[3]]<R[ins[4]])','LE':'R[ins[2]]=(R[ins[3]]<=R[ins[4]])',
+'NOT':'R[ins[2]]=(not R[ins[3]])','UNM':'R[ins[2]]=(-R[ins[3]])','LEN':'R[ins[2]]=(#R[ins[3]])',
+'JMP':'pc=ins[2]+1','JF':'if not R[ins[3]] then pc=ins[2]+1 end','JT':'if R[ins[3]] then pc=ins[2]+1 end',
+'SELF':'local o=R[ins[3]];R[ins[2]+1]=o;R[ins[2]]=o[K[ins[4]]]',
+'VARARG':'local r=ins[2];local cnt=ins[3];if cnt==-1 then for i=1,VA.n do R[r+i-1]=VA[i] end;top=r+VA.n else for i=1,cnt do R[r+i-1]=VA[i] end end',
+'CALL':'local base=ins[2];local nargs=ins[3];local nres=ins[4];local a;if nargs==-1 then a=top-(base+1) else a=nargs end;local ca={};for i=1,a do ca[i]=R[base+i] end;local res=pack(R[base](unpack(ca,1,a)));if nres==-1 then for i=1,res.n do R[base+i-1]=res[i] end;top=base+res.n else for i=1,nres do R[base+i-1]=res[i] end end',
+'CLOSURE':'local cp=protos[ins[3]];local ups={};for i=1,#cp.upvals do local sp=cp.upvals[i];if sp[1]==0 then ups[i-1]=R[sp[2]] else ups[i-1]=U[sp[2]] end end;R[ins[2]]=mkclosure(ins[3],ups)',
+'RET':'local base=ins[2];local cnt=ins[3];if cnt==-1 then cnt=top-base end;if cnt==0 then return else local rv={};for i=1,cnt do rv[i]=R[base+i-1] end;return unpack(rv,1,cnt) end',
+}
+
+def build_vm():
+    lines=[]
+    for i,name in enumerate(HOT):
+        kw='if' if i==0 else 'elseif'
+        lines.append('    %s op==O_%s then %s'%(kw,name,BODY[name]))
+    lines.append('    else error("bad op "..tostring(op)) end')
+    dispatch='\n'.join(lines)
+    return r'''local unpack=table.unpack or unpack
 local pack=table.pack
-
 local mkclosure
 local function exec(proto, U, R, VA)
   local code=proto.code
@@ -50,75 +119,7 @@ local function exec(proto, U, R, VA)
   while true do
     local ins=code[pc]; pc=pc+1
     local op=ins[1]
-    if op==O_LOADK then R[ins[2]]=K[ins[3]]
-    elseif op==O_LOADN then R[ins[2]]=ins[3]
-    elseif op==O_LOADB then R[ins[2]]=(ins[3]==1)
-    elseif op==O_LOADNIL then R[ins[2]]=nil
-    elseif op==O_MOVE then R[ins[2]]=R[ins[3]]
-    elseif op==O_GETLOCAL then R[ins[2]]=R[ins[3]][1]
-    elseif op==O_SETLOCAL then R[ins[2]][1]=R[ins[3]]
-    elseif op==O_NEWLOCAL then R[ins[2]]={R[ins[3]]}
-    elseif op==O_GETUPVAL then R[ins[2]]=U[ins[3]][1]
-    elseif op==O_SETUPVAL then U[ins[2]][1]=R[ins[3]]
-    elseif op==O_GETGLOBAL then R[ins[2]]=G[K[ins[3]]]
-    elseif op==O_SETGLOBAL then G[K[ins[2]]]=R[ins[3]]
-    elseif op==O_GETTABLE then R[ins[2]]=R[ins[3]][R[ins[4]]]
-    elseif op==O_SETTABLE then R[ins[2]][R[ins[3]]]=R[ins[4]]
-    elseif op==O_NEWTABLE then R[ins[2]]={}
-    elseif op==O_SETLIST then
-      local t=R[ins[2]]; local start=ins[3]; local cnt=ins[4]; local base=ins[5]
-      if cnt==-1 then cnt=top-base end
-      for i=1,cnt do t[start+i-1]=R[base+i-1] end
-    elseif op==O_ADD then R[ins[2]]=R[ins[3]]+R[ins[4]]
-    elseif op==O_SUB then R[ins[2]]=R[ins[3]]-R[ins[4]]
-    elseif op==O_MUL then R[ins[2]]=R[ins[3]]*R[ins[4]]
-    elseif op==O_DIV then R[ins[2]]=R[ins[3]]/R[ins[4]]
-    elseif op==O_IDIV then R[ins[2]]=R[ins[3]]//R[ins[4]]
-    elseif op==O_MOD then R[ins[2]]=R[ins[3]]%R[ins[4]]
-    elseif op==O_POW then R[ins[2]]=R[ins[3]]^R[ins[4]]
-    elseif op==O_CONCAT then R[ins[2]]=R[ins[3]]..R[ins[4]]
-    elseif op==O_BAND then R[ins[2]]=bit32.band(R[ins[3]],R[ins[4]])
-    elseif op==O_BOR then R[ins[2]]=bit32.bor(R[ins[3]],R[ins[4]])
-    elseif op==O_BXOR then R[ins[2]]=bit32.bxor(R[ins[3]],R[ins[4]])
-    elseif op==O_SHL then R[ins[2]]=bit32.lshift(R[ins[3]],R[ins[4]])
-    elseif op==O_SHR then R[ins[2]]=bit32.rshift(R[ins[3]],R[ins[4]])
-    elseif op==O_EQ then R[ins[2]]=(R[ins[3]]==R[ins[4]])
-    elseif op==O_NE then R[ins[2]]=(R[ins[3]]~=R[ins[4]])
-    elseif op==O_LT then R[ins[2]]=(R[ins[3]]<R[ins[4]])
-    elseif op==O_LE then R[ins[2]]=(R[ins[3]]<=R[ins[4]])
-    elseif op==O_NOT then R[ins[2]]=(not R[ins[3]])
-    elseif op==O_UNM then R[ins[2]]=(-R[ins[3]])
-    elseif op==O_LEN then R[ins[2]]=(#R[ins[3]])
-    elseif op==O_BNOT then R[ins[2]]=bit32.bnot(R[ins[3]])
-    elseif op==O_JMP then pc=ins[2]+1
-    elseif op==O_JF then if not R[ins[3]] then pc=ins[2]+1 end
-    elseif op==O_JT then if R[ins[3]] then pc=ins[2]+1 end
-    elseif op==O_SELF then local o=R[ins[3]]; R[ins[2]+1]=o; R[ins[2]]=o[K[ins[4]]]
-    elseif op==O_VARARG then
-      local r=ins[2]; local cnt=ins[3]
-      if cnt==-1 then for i=1,VA.n do R[r+i-1]=VA[i] end; top=r+VA.n
-      else for i=1,cnt do R[r+i-1]=VA[i] end end
-    elseif op==O_CALL then
-      local base=ins[2]; local nargs=ins[3]; local nres=ins[4]
-      local a; if nargs==-1 then a=top-(base+1) else a=nargs end
-      local ca={}; for i=1,a do ca[i]=R[base+i] end
-      local f=R[base]
-      local res=pack(f(unpack(ca,1,a)))
-      if nres==-1 then for i=1,res.n do R[base+i-1]=res[i] end; top=base+res.n
-      else for i=1,nres do R[base+i-1]=res[i] end end
-    elseif op==O_CLOSURE then
-      local cp=protos[ins[3]]; local ups={}
-      for i=1,#cp.upvals do
-        local sp=cp.upvals[i]
-        if sp[1]=="local" then ups[i-1]=R[sp[2]] else ups[i-1]=U[sp[2]] end
-      end
-      R[ins[2]]=mkclosure(ins[3], ups)
-    elseif op==O_RET then
-      local base=ins[2]; local cnt=ins[3]
-      if cnt==-1 then cnt=top-base end
-      if cnt==0 then return
-      else local rv={}; for i=1,cnt do rv[i]=R[base+i-1] end; return unpack(rv,1,cnt) end
-    else error("bad op "..tostring(op)) end
+'''+dispatch+r'''
   end
 end
 mkclosure=function(pi, ups)
@@ -127,30 +128,81 @@ mkclosure=function(pi, ups)
     local args=pack(...)
     local R={}
     local bp=proto.boxedp
-    for i=0,proto.params-1 do if bp[i+1] then R[i]={args[i+1]} else R[i]=args[i+1] end end
+    for i=0,proto.params-1 do if bp[i+1]==1 then R[i]={args[i+1]} else R[i]=args[i+1] end end
     local VA={n=0}
     if proto.vararg then local k=0; for i=proto.params+1,args.n do k=k+1; VA[k]=args[i] end; VA.n=k end
     return exec(proto, ups, R, VA)
   end
 end
-return mkclosure(1, {})(...)
+return mkclosure(__ENTRY__, {})(...)
 '''
-def generate(src, rng=None):
+
+def scramble_reg(prog, rng, intensity=1.0):
+    # Insert DEAD instruction blocks: a forward JMP skips over junk that never executes.
+    # Dead code can reference any register safely (it never runs), and it adds both fake
+    # instructions and extra control flow for a devirtualizer to untangle. Real jump targets
+    # are remapped; inserted skip-jumps are given final positions directly.
+    OP=rasm.OP
+    JMP=OP['JMP']; JF=OP['JF']; JT=OP['JT']; JUMPS=(JMP,JF,JT)
+    LOADN=OP['LOADN']; ADD=OP['ADD']; SUB=OP['SUB']; MUL=OP['MUL']
+    GETTABLE=OP['GETTABLE']; MOVE=OP['MOVE']; CALL=OP['CALL']; GETGLOBAL=OP['GETGLOBAL']
+    nconst=len(prog['consts'])
+    for p in prog['protos']:
+        nr=max(2, p['nreg'])
+        def deadjunk():
+            a=rng.randrange(nr); b=rng.randrange(nr); c=rng.randrange(nr)
+            return rng.choice([
+                [LOADN, a, rng.randint(1,99999)], [ADD,a,b,c], [SUB,a,b,c], [MUL,a,b,c],
+                [GETTABLE,a,b,c], [MOVE,a,b], [CALL,a,rng.randint(0,2),1],
+                [GETGLOBAL,a,rng.randint(1,max(1,nconst))],
+            ])
+        code=p['code']
+        newcode=[]; oldtonew=[]; realjumps=[]
+        for ins in code:
+            oldtonew.append(len(newcode))
+            pos=len(newcode); newcode.append(ins)
+            if ins[0] in JUMPS: realjumps.append(pos)
+            if rng.random() < 0.5*intensity:
+                jpos=len(newcode); newcode.append([JMP,0])      # skip-jump (target set below)
+                for _ in range(rng.randint(1,3)): newcode.append(deadjunk())
+                newcode[jpos][1]=len(newcode)                   # skip lands on next real instruction
+        for pos in realjumps:
+            ins=newcode[pos]; t=ins[1]
+            ins[1]= oldtonew[t] if t < len(oldtonew) else len(newcode)
+        p['code']=newcode
+    return prog
+
+def _cksum(b):
+    h=0
+    for x in b: h=(h*31+x)%16777216
+    return h
+
+def generate(src, rng=None, anti_tamper=False, scramble=0.0):
     prog=rasm.compile_reg(src)
     names=rasm.OPS; defOP=prog['OP']
     if rng is not None:
         vals=rng.sample(range(2,250), len(names)); newOP=dict(zip(names, vals))
     else:
         newOP=defOP
+    if scramble>0 and rng is not None:
+        scramble_reg(prog, rng, intensity=scramble)
     rev={defOP[n]:newOP[n] for n in names}          # remap instruction opcodes consistently
     for pr in prog['protos']:
         for ins in pr['code']: ins[0]=rev[ins[0]]
     opdefs='\n'.join('local O_%s=%d'%(n,newOP[n]) for n in names)
-    protos='{'+','.join(emit_proto(p) for p in prog['protos'])+'}'
-    consts='{'+','.join('[%d]=%s'%(i+1,lua_str(c)) for i,c in enumerate(prog['consts']))+'}'
+    blob=serialize_reg(prog)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g),g) for g in prog['globals'])+'}'
-    body=VM.replace('__PROTOS__',protos).replace('__CONSTS__',consts).replace('__GLOBALS__',gcap)
-    return opdefs+'\n'+body
+    vm=build_vm()
+    extra=''; entry='1'
+    if anti_tamper:
+        ck=_cksum(blob)
+        extra=('local function _ck(s) local h=0 for i=1,#s do h=(h*31+string.byte(s,i))%%16777216 end return h end\n'
+               'local _CK=%d\n' % ck)
+        entry='(1+_CK-_ck(BLOB))'
+    vm=vm.replace('__ENTRY__', entry)
+    header='local BLOB=%s\n%s%slocal G=%s\n' % (lua_str(blob), DESER, extra, gcap)
+    return opdefs+'\n'+header+vm
+
 if __name__=='__main__':
     import sys
     print(generate(open(sys.argv[1]).read()))

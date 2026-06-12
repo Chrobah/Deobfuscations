@@ -13,7 +13,7 @@ def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble
     import os
     if register:
         # register-machine VM: flat per-proto bytecode, per-build randomized opcodes
-        virt = rvmreg_gen.generate(src, rng)
+        virt = rvmreg_gen.generate(src, rng, anti_tamper=anti_tamper, scramble=scramble_level)
         if not harden:
             return virt
         return luaobf.obfuscate(virt, seed=rng.randrange(1<<31), place_lock=place_lock,
