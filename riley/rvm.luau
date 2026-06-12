@@ -139,6 +139,10 @@ local function exec_stmt(node, scope)
   elseif op==FORIN then
     local vids=node[2]; local it=eval_list(node[3],scope)
     local f,st,ctrl=it[1],it[2],it[3]
+    if type(f)~="function" then            -- Luau generalized iteration (tables / __iter)
+      local mt=getmetatable(f)
+      if mt and mt.__iter then f,st,ctrl=mt.__iter(f) else f,st,ctrl=next,f,nil end
+    end
     while true do
       local r=tpack(f(st,ctrl))
       if r[1]==nil then break end

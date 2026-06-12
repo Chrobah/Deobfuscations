@@ -76,7 +76,7 @@ HOT=['MOVE','GETLOCAL','SETLOCAL','LOADN','LOADK','CALL','RET','JF','JMP','JT',
      'ADD','SUB','MUL','LT','LE','EQ','GETTABLE','SETTABLE','GETGLOBAL','GETUPVAL',
      'SETUPVAL','NEWLOCAL','SELF','NEWTABLE','SETLIST','LOADNIL','LOADB','SETGLOBAL',
      'DIV','IDIV','MOD','POW','CONCAT','NE','NOT','UNM','LEN','BAND','BOR','BXOR',
-     'SHL','SHR','BNOT','VARARG','CLOSURE']
+     'SHL','SHR','BNOT','VARARG','CLOSURE','ITER']
 
 BODY={
 'LOADK':'R[ins[2]]=K[ins[3]]','LOADN':'R[ins[2]]=ins[3]','LOADB':'R[ins[2]]=(ins[3]==1)',
@@ -97,9 +97,10 @@ BODY={
 'JMP':'pc=ins[2]+1','JF':'if not R[ins[3]] then pc=ins[2]+1 end','JT':'if R[ins[3]] then pc=ins[2]+1 end',
 'SELF':'local o=R[ins[3]];R[ins[2]+1]=o;R[ins[2]]=o[K[ins[4]]]',
 'VARARG':'local r=ins[2];local cnt=ins[3];if cnt==-1 then for i=1,VA.n do R[r+i-1]=VA[i] end;top=r+VA.n else for i=1,cnt do R[r+i-1]=VA[i] end end',
-'CALL':'local base=ins[2];local nargs=ins[3];local nres=ins[4];local a;if nargs==-1 then a=top-(base+1) else a=nargs end;local ca={};for i=1,a do ca[i]=R[base+i] end;local res=pack(R[base](unpack(ca,1,a)));if nres==-1 then for i=1,res.n do R[base+i-1]=res[i] end;top=base+res.n else for i=1,nres do R[base+i-1]=res[i] end end',
+'CALL':'local base=ins[2];local nargs=ins[3];local nres=ins[4];local f=R[base];if nargs>=0 and nres==1 then if nargs==0 then R[base]=f() elseif nargs==1 then R[base]=f(R[base+1]) elseif nargs==2 then R[base]=f(R[base+1],R[base+2]) elseif nargs==3 then R[base]=f(R[base+1],R[base+2],R[base+3]) else local ca={};for i=1,nargs do ca[i]=R[base+i] end;R[base]=f(unpack(ca,1,nargs)) end elseif nargs>=0 and nres==0 then if nargs==0 then f() elseif nargs==1 then f(R[base+1]) elseif nargs==2 then f(R[base+1],R[base+2]) elseif nargs==3 then f(R[base+1],R[base+2],R[base+3]) else local ca={};for i=1,nargs do ca[i]=R[base+i] end;f(unpack(ca,1,nargs)) end else local a;if nargs==-1 then a=top-(base+1) else a=nargs end;local ca={};for i=1,a do ca[i]=R[base+i] end;local res=pack(f(unpack(ca,1,a)));if nres==-1 then for i=1,res.n do R[base+i-1]=res[i] end;top=base+res.n else for i=1,nres do R[base+i-1]=res[i] end end end',
 'CLOSURE':'local cp=protos[ins[3]];local ups={};for i=1,#cp.upvals do local sp=cp.upvals[i];if sp[1]==0 then ups[i-1]=R[sp[2]] else ups[i-1]=U[sp[2]] end end;R[ins[2]]=mkclosure(ins[3],ups)',
-'RET':'local base=ins[2];local cnt=ins[3];if cnt==-1 then cnt=top-base end;if cnt==0 then return else local rv={};for i=1,cnt do rv[i]=R[base+i-1] end;return unpack(rv,1,cnt) end',
+'ITER':'local b=ins[2];R[b],R[b+1],R[b+2]=_iter(R[b],R[b+1],R[b+2])',
+'RET':'local base=ins[2];local cnt=ins[3];if cnt==1 then return R[base] elseif cnt==0 then return else if cnt==-1 then cnt=top-base end;local rv={};for i=1,cnt do rv[i]=R[base+i-1] end;return unpack(rv,1,cnt) end',
 }
 
 def build_vm():
@@ -111,6 +112,12 @@ def build_vm():
     dispatch='\n'.join(lines)
     return r'''local unpack=table.unpack or unpack
 local pack=table.pack
+local function _iter(f,s,c)                 -- Luau generalized iteration
+  if type(f)=="function" then return f,s,c end
+  local mt=getmetatable(f)
+  if mt then local it=mt.__iter if it then return it(f) end end
+  return next,f,nil
+end
 local mkclosure
 local function exec(proto, U, R, VA)
   local code=proto.code
@@ -122,15 +129,31 @@ local function exec(proto, U, R, VA)
 '''+dispatch+r'''
   end
 end
+local _NOVA={n=0}                 -- shared empty vararg block (VM never writes VA)
 mkclosure=function(pi, ups)
   local proto=protos[pi]
-  return function(...)
+  local np=proto.params; local bp=proto.boxedp
+  local anyboxed=false
+  for i=1,np do if bp[i]==1 then anyboxed=true break end end
+  if not proto.vararg then
+    if not anyboxed then           -- hottest path: fixed params, none captured -> no pack, no VA
+      return function(...)
+        local R={}
+        for i=0,np-1 do R[i]=select(i+1,...) end
+        return exec(proto, ups, R, _NOVA)
+      end
+    end
+    return function(...)
+      local R={}
+      for i=0,np-1 do local v=select(i+1,...); if bp[i+1]==1 then R[i]={v} else R[i]=v end end
+      return exec(proto, ups, R, _NOVA)
+    end
+  end
+  return function(...)            -- vararg path
     local args=pack(...)
     local R={}
-    local bp=proto.boxedp
-    for i=0,proto.params-1 do if bp[i+1]==1 then R[i]={args[i+1]} else R[i]=args[i+1] end end
-    local VA={n=0}
-    if proto.vararg then local k=0; for i=proto.params+1,args.n do k=k+1; VA[k]=args[i] end; VA.n=k end
+    for i=0,np-1 do if bp[i+1]==1 then R[i]={args[i+1]} else R[i]=args[i+1] end end
+    local VA={n=0}; local k=0; for i=np+1,args.n do k=k+1; VA[k]=args[i] end; VA.n=k
     return exec(proto, ups, R, VA)
   end
 end
@@ -200,7 +223,9 @@ def generate(src, rng=None, anti_tamper=False, scramble=0.0):
                'local _CK=%d\n' % ck)
         entry='(1+_CK-_ck(BLOB))'
     vm=vm.replace('__ENTRY__', entry)
-    header='local BLOB=%s\n%s%slocal G=%s\n' % (lua_str(blob), DESER, extra, gcap)
+    # G is the live global environment (getfenv) so global reads/writes are real and
+    # visible across script boundaries; the snapshot is a fallback if getfenv is unavailable.
+    header='local BLOB=%s\n%s%slocal G=(getfenv and getfenv(1)) or %s\n' % (lua_str(blob), DESER, extra, gcap)
     return opdefs+'\n'+header+vm
 
 if __name__=='__main__':

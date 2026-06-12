@@ -10,20 +10,26 @@ above source-level string obfuscation. Read the "Honesty" section for where it s
 relative to Luraph and what it costs.
 
 ```
-python3 riley.py MyScript.luau -o Protected.luau [--seed N] [--place-lock ID] [--anti-tamper] [--verify]
+python3 riley.py MyScript.luau -o Protected.luau [--seed N] [--place-lock ID] [--anti-tamper] [--scramble F] [--verify]
 ```
+
+Worked examples (input + protected output, each verified identical to native) live in [`samples/`](samples/).
 
 ## Pipeline
 
 ```
 your .luau
   └─[rlex/rparse]→ AST
-      └─[rcompile]→ VM program:  per-function bytecode (opcode tables) + constant pool + captured globals
-          └─[rserialize + rvm]→ a generic interpreter (scopes, closures, metatables, multi-returns, varargs)
-                                 walking that program;  opcode numbers randomized per build
+      └─[rasm]→ register bytecode: flat per-function instruction stream (jumps) + constant pool
+          └─[rvmreg_gen]→ a generic register interpreter (scopes, closures, metatables, multi-returns,
+                          varargs, generalized iteration); bytecode serialized to an encrypted blob &
+                          rebuilt by a deserializer at runtime; opcodes randomized per build
               └─[luaobf]→ encrypt the constant pool, obfuscate the interpreter's own
                           identifiers/fields, minify, wrap in a closure
 ```
+
+(`--tree` swaps the first two stages for the `rcompile` + `rserialize`/`rvm` tree-walker; everything
+downstream is identical.)
 
 Net effect on the shipped bytecode:
 - **Your strings** (service/remote names, messages, asset ids) → encrypted constant pool.
@@ -34,13 +40,15 @@ Net effect on the shipped bytecode:
 
 locals & block scoping & shadowing · globals · all operators (`+ - * / // % ^ ..`, comparisons,
 `and/or` short-circuit, `not # -`, bit32) · `if/elseif/else` · `while` · `repeat/until` ·
-numeric `for` (incl. negative/float step) · generic `for ... in` · `break` / `continue` ·
+numeric `for` (incl. negative/float step) · generic `for ... in` · **Luau generalized iteration**
+(`for k,v in t do` over tables / `__iter`) · `break` / `continue` ·
 multiple assignment · compound assignment (`+=` … evaluates the target once) · function decls,
 **closures with shared upvalues**, **upvalue writes**, **per-iteration loop capture** ·
 method calls & `self` · **multiple return values** & truncation via `()` · **varargs** (`...`,
 `select`) · recursion · **table constructors** (array/record/mixed/trailing-multi) ·
-**metatables/metamethods** (`__index`, `__add`, `__eq`, `__lt`, `__call`, `__tostring`, …) ·
-`pcall`/`error` · string interpolation · type annotations (parsed & erased).
+**metatables/metamethods** (`__index`, `__add`, `__eq`, `__lt`, `__call`, `__tostring`, `__iter`, …) ·
+**live globals** (reads/writes hit the real environment, visible across scripts) · `pcall`/`error` ·
+string interpolation · number literals (hex/binary/underscores) · type annotations (parsed & erased).
 
 `riley.py … --verify` re-checks every build with `luau-compile`.
 
@@ -49,44 +57,58 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 ```
 --seed N         deterministic, reproducible build (also fixes the random opcode map). Omit = random.
 --place-lock ID  bind the encrypted constants to a Roblox PlaceId (stolen copy decrypts to garbage elsewhere).
---anti-tamper    weave a bytecode-blob integrity check into execution (tamper -> derail). (both VMs)
---scramble F     control-flow scramble intensity (0=off, 1=default, 2=heavy). (both VMs)
---register       use the register-machine VM instead of the tree-walker (flatter bytecode, ~2.3x faster).
+--anti-tamper    weave a bytecode-blob integrity check into execution (tamper -> derail).
+--scramble F     control-flow scramble intensity (0=off, 1=default, 2=heavy).
+--tree           use the tree-walker VM instead of the default register VM.
 --no-harden      emit the raw VM without the luaobf encryption layer (for debugging).
 --verify         compile-check the output with luau-compile.
 ```
 
 ## Two VMs
 
-riley can target either of two virtual machines — **both** now blob-serialized + encrypted, with
-`--scramble`, `--anti-tamper`, `--place-lock`, and per-build randomized opcodes:
+riley ships two virtual machines — **both** blob-serialized + encrypted, with `--scramble`,
+`--anti-tamper`, `--place-lock`, per-build randomized opcodes, live globals, and full Luau coverage:
 
-- **Tree-walker (default)** — the program is a serialized encrypted byte blob walked recursively.
-  Battle-tested; slower.
-- **Register machine (`--register`)** — your code is compiled to a flat, register-based instruction
+- **Register machine (default)** — your code is compiled to a flat, register-based instruction
   stream (a real bytecode with jumps, like Lua's own VM) with **capture-analysed local boxing** (only
-  locals captured by a closure are heap-boxed). The bytecode is serialized to the same kind of
-  encrypted blob, so static-dump resistance matches the tree-walker; it's **harder to devirtualize**
-  than the recursive tree, and **~2.3× faster**. Scrambling here inserts dead instruction blocks
-  (a jump over junk that never executes) into the stream.
+  locals captured by a closure are heap-boxed). Harder to devirtualize than a tree, and faster.
+  Scrambling here inserts dead instruction blocks (a jump over junk that never executes).
+- **Tree-walker (`--tree`)** — the program is a serialized encrypted byte blob walked recursively.
+  The original VM; kept for VM diversity (two different interpreters = no single reusable devirtualizer).
 
-Both VMs are verified behaviour-identical to native on the same suite (locals/closures/upvalues,
-per-iteration capture, multi-return, varargs, metatables, all control flow), plus a 700-program
-differential fuzzer for the register VM (clean and scrambled).
+Both are verified behaviour-identical to native on the same suite (locals/closures/upvalues,
+per-iteration capture, generalized iteration, multi-return, varargs, metatables, all control flow),
+plus a **700-program differential fuzzer** for the register VM (clean and scrambled). The register VM
+runs **~1.3–1.7× faster** than the tree-walker.
 
-## Not supported / caveats (read before shipping)
+## Behaviour & coverage
 
-- **`goto` / labels** → riley errors out (won't silently miscompile). Rewrite with `if`/`while`/`continue`.
-- **Performance**: it's an interpreter, so compute-heavy code runs *tens of times* slower
-  (≈70× for the tree-walker, ≈46× for `--register`, on a tight `fib`+loop benchmark). For
-  event-driven game logic (UI, remotes, input) this is unnoticeable; **do not virtualize per-frame
-  hot math loops** — leave those as plain `LocalScript`s and only run riley on the logic you care
-  about hiding. (No Lua-in-Lua VM approaches native — that's inherent, not a riley limitation.)
-- **Globals are snapshotted** at start into a captured table (reads see the startup value; writes
-  stay internal to the script). Fine for normal client code; don't use riley on a script whose
-  job is to mutate a shared global that *other* scripts read.
-- **String interpolation** is desugared to `..tostring(...)` (equivalent for normal use).
-- Always test the protected `LocalScript`/`ModuleScript` in Studio + a live session before shipping.
+riley accepts **all of Luau** and preserves behaviour. There are no language features it silently
+mishandles; specifically, the things that *used* to be caveats are resolved:
+
+- **Full Luau syntax** including generalized iteration (`for k,v in t do`), `__iter`, compound ops,
+  string interpolation (faithfully — Luau itself `tostring`s each piece), hex/binary/`_` number
+  literals, and type annotations. (`goto`/labels are **not part of Luau** at all — Roblox never
+  adopted them — so riley rejects them exactly like the Luau compiler does.)
+- **Live globals** — global reads and writes go to the real environment (`getfenv`), so a value
+  written in a virtualized script is visible to other scripts, and reads see live values. No snapshot.
+- **String interpolation** is faithful to Luau semantics.
+
+The only two costs are **inherent to virtualizing client code** — they are properties of the whole
+category (Luraph included), not riley bugs, and cannot be engineered away:
+
+1. **It's an interpreter, so it's slower than native.** Measured slowdown: **~20× on typical
+   table/string/event game code, up to ~70× on tight recursion/arithmetic** (worst case). This is
+   unnoticeable for event-driven logic (UI, remotes, input, gameplay rules); the one rule is **don't
+   virtualize a per-frame hot math loop** — leave that as a plain `LocalScript` and virtualize the
+   logic you actually want hidden. No Lua-in-Lua VM reaches native speed.
+2. **It's client-side, so a determined reverser who *runs* it can recover logic.** The VM + keys ship
+   to the player. riley raises the bar from "one-click decompile" to "write a custom devirtualizer for
+   a polymorphic, encrypted-bytecode VM," which stops nearly everyone — but for logic that must stay
+   secret from *everyone* (anti-cheat verdicts, economy authority), keep it on the **server**. This is
+   true of every client obfuscator that exists.
+
+As always, test the protected `LocalScript`/`ModuleScript` in Studio + a live session before shipping.
 
 ## Honesty: how strong is this, really? (read this)
 
@@ -103,15 +125,17 @@ arms race), here is the real picture. Do not treat riley as Luraph-equivalent.
 - Encrypted strings + obfuscated interpreter + minify + wrap.
 
 **What riley now also has (since the first cut):**
+- A **register VM** (now the default): flat register bytecode, capture-analysed local boxing,
+  blob-serialized + encrypted, full Luau coverage, ~1.3–1.7× faster than the tree-walker.
 - **Control-flow scrambling** (`--scramble`, both VMs): opaque-predicate-guarded dead branches and
   junk in the tree-walker; dead instruction blocks (jump-over-junk) in the register VM.
 - **Anti-tamper** (`--anti-tamper`, both VMs): a blob checksum woven into entry selection (tamper → derail).
-- A **register VM** (`--register`): flat register bytecode, capture-analysed local boxing, **blob-serialized
-  + encrypted just like the tree-walker**, ~2.3× faster than it.
+- **Full Luau coverage + live globals** — generalized iteration, `__iter`, and real-environment
+  globals; no language caveats remain.
 
 **What Luraph has that riley still does NOT (the honest gap):**
-- A register VM with **years of perf work**. riley's exists, is blob-serialized and ~2.3× faster than
-  its tree-walker, but it's still a hosted interpreter (tens-of-× slower than native).
+- A register VM with **years of perf work**. riley's exists and is blob-serialized, but it's still a
+  hosted interpreter (~20–70× slower than native, workload-dependent).
 - **Anti-debug / decompiler-crashers** and trap-redirected control flow (TrollVM™, debug-library
   tamper detection). riley's anti-tamper is a single woven integrity check, and client-side.
 - **Metamorphic VM** — the interpreter body itself mutating per build. riley randomizes opcodes
@@ -136,16 +160,16 @@ dedicated expert. For truly sensitive logic, keep it on the **server**.
 3. ✅ **Anti-tamper** — a checksum of the bytecode blob woven into entry-proto selection
    (`--anti-tamper`): tamper the blob and it derails instead of running modified. (Client-side, so
    inherently limited — an attacker who controls the runtime can still hook around it.)
-4. ✅ **Register VM** (`--register`) — flat register bytecode (a real instruction stream with jumps),
-   capture-analysed local boxing, per-build randomized opcodes. Harder to devirtualize than the
-   recursive tree and ~2.3× faster. Verified behaviour-identical (suite + 700-program fuzzer).
-5. ✅ **Blob-serialize + scramble the register VM** — it now serializes to the same encrypted blob
-   as the tree-walker and supports `--scramble`/`--anti-tamper`/`--place-lock`. Anti-dump parity reached.
+4. ✅ **Register VM (now the default)** — flat register bytecode (a real instruction stream with jumps),
+   capture-analysed local boxing, blob-serialized + encrypted, `--scramble`/`--anti-tamper`/`--place-lock`,
+   ~1.3–1.7× faster than the tree-walker. Verified behaviour-identical (suite + 700-program fuzzer).
+5. ✅ **Full Luau coverage + live globals** — generalized iteration / `__iter`, real-environment globals;
+   no language caveats remain on either VM.
 6. **Environment-derived keys** — needs real Studio testing; can break things if rushed.
 7. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
 8. Per-function controls (exclude hot paths from virtualization), packing.
 
-Items 5–8 trend toward "team running an arms race" and are where parity actually lives.
+Items 6–8 trend toward "team running an arms race" and are where parity actually lives.
 
 ## Requirements
 

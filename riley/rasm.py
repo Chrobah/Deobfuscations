@@ -29,7 +29,7 @@ OPS=['LOADK','LOADN','LOADB','LOADNIL','GETLOCAL','SETLOCAL','NEWLOCAL','GETUPVA
      'GETGLOBAL','SETGLOBAL','GETTABLE','SETTABLE','NEWTABLE','SETLIST','MOVE',
      'ADD','SUB','MUL','DIV','IDIV','MOD','POW','CONCAT','BAND','BOR','BXOR','SHL','SHR',
      'EQ','NE','LT','LE','NOT','UNM','LEN','BNOT','JMP','JF','JT','CALL','RET','CLOSURE',
-     'VARARG','SELF','TEST']
+     'VARARG','SELF','TEST','ITER']
 OP={n:i+1 for i,n in enumerate(OPS)}
 ARITH={'+':'ADD','-':'SUB','*':'MUL','/':'DIV','//':'IDIV','%':'MOD','^':'POW','..':'CONCAT',
        '&':'BAND','|':'BOR','~':'BXOR','<<':'SHL','>>':'SHR'}
@@ -410,6 +410,7 @@ class Asm:
         # ensure 3 slots
         fr=base; sr=base+1; ctrl=base+2
         p.freereg=base+3
+        s.emit(p,'ITER', base)          # normalize iterator: tables/__iter -> (next,t,nil) (Luau generalized iteration)
         top=s.label(p)
         # call f(st, ctrl) -> results in callbase
         cb=p.freereg

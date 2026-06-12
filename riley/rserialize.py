@@ -115,7 +115,7 @@ def emit_program(prog, vmtext, opmap, anti_tamper=False):
                'local _CK=%d\n' % ck)
         entry='(1+_CK-_ck(BLOB))'
     vmtext=vmtext.replace('return make_closure(1, nil)(...)', extra+'return make_closure('+entry+', nil)(...)')
-    header=('local BLOB=%s\n%s\nlocal G=%s\n' % (lua_str(blob), DESER, gcap))
+    header=('local BLOB=%s\n%s\nlocal G=(getfenv and getfenv(1)) or %s\n' % (lua_str(blob), DESER, gcap))
     return header+vmtext
 
 def serialize(src, vmtext):

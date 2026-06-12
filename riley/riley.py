@@ -8,7 +8,7 @@ A decompiler now sees the interpreter and an opaque data blob, not your logic.
 import argparse, sys, random
 import rcompile, rserialize, luaobf, scramble as scrambler, rvmreg_gen
 
-def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble_level=1.0, register=False):
+def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble_level=1.0, register=True):
     rng = random.Random(seed if seed is not None else random.randrange(1<<31))
     import os
     if register:
@@ -42,12 +42,12 @@ def main():
     ap.add_argument('--place-lock', type=int, default=0)
     ap.add_argument('--anti-tamper', action='store_true')
     ap.add_argument('--scramble', type=float, default=1.0, help='control-flow scramble intensity 0..2 (default 1)')
-    ap.add_argument('--register', action='store_true', help='use the register-machine VM (faster, flatter bytecode)')
+    ap.add_argument('--tree', action='store_true', help='use the tree-walker VM instead of the default register VM')
     ap.add_argument('--no-harden', action='store_true', help='emit the raw VM (debug)')
     ap.add_argument('--verify', action='store_true')
     a=ap.parse_args()
     out=build(open(a.input,encoding='utf-8').read(), seed=a.seed,
-              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden, scramble_level=a.scramble, register=a.register)
+              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden, scramble_level=a.scramble, register=not a.tree)
     if a.output: open(a.output,'w',encoding='utf-8').write(out)
     else: sys.stdout.write(out)
     if a.verify:
