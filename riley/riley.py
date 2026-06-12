@@ -6,9 +6,9 @@ Pipeline:  your code --[parse]--> AST --[compile]--> bytecode + constant pool
 A decompiler now sees the interpreter and an opaque data blob, not your logic.
 """
 import argparse, sys, random
-import rcompile, rserialize, luaobf
+import rcompile, rserialize, luaobf, scramble as scrambler
 
-def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True):
+def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True, scramble_level=1.0):
     rng = random.Random(seed if seed is not None else random.randrange(1<<31))
     import os
     vm = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'rvm.luau')).read()
@@ -17,7 +17,9 @@ def build(src, seed=None, place_lock=0, anti_tamper=False, harden=True):
     opmap = dict(zip(rserialize.OPNAMES, vals))
     for n,v in opmap.items(): setattr(rcompile, n, v)
     prog = rcompile.compile_src(src)
-    virt = rserialize.emit_program(prog, vm, opmap)   # clean virtualized program
+    if scramble_level>0:
+        scrambler.scramble(prog, rng, intensity=scramble_level)
+    virt = rserialize.emit_program(prog, vm, opmap, anti_tamper=anti_tamper)   # virtualized + scrambled + (opt) anti-tamper
     if not harden:
         return virt
     # final hardening layer: encrypt the constant pool strings, obfuscate the
@@ -32,11 +34,12 @@ def main():
     ap.add_argument('--seed', type=int, default=None)
     ap.add_argument('--place-lock', type=int, default=0)
     ap.add_argument('--anti-tamper', action='store_true')
+    ap.add_argument('--scramble', type=float, default=1.0, help='control-flow scramble intensity 0..2 (default 1)')
     ap.add_argument('--no-harden', action='store_true', help='emit the raw VM (debug)')
     ap.add_argument('--verify', action='store_true')
     a=ap.parse_args()
     out=build(open(a.input,encoding='utf-8').read(), seed=a.seed,
-              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden)
+              place_lock=a.place_lock, anti_tamper=a.anti_tamper, harden=not a.no_harden, scramble_level=a.scramble)
     if a.output: open(a.output,'w',encoding='utf-8').write(out)
     else: sys.stdout.write(out)
     if a.verify:

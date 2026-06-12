@@ -49,7 +49,8 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 ```
 --seed N         deterministic, reproducible build (also fixes the random opcode map). Omit = random.
 --place-lock ID  bind the encrypted constants to a Roblox PlaceId (stolen copy decrypts to garbage elsewhere).
---anti-tamper    load-time integrity check.
+--anti-tamper    weave a bytecode-blob integrity check into execution (tamper -> derail).
+--scramble F     control-flow scramble intensity (0=off, 1=default, 2=heavy).
 --no-harden      emit the raw VM without the luaobf encryption layer (for debugging).
 --verify         compile-check the output with luau-compile.
 ```
@@ -103,11 +104,13 @@ dedicated expert. For truly sensitive logic, keep it on the **server**.
 ## Roadmap (in honest strength-per-effort order)
 
 1. ✅ Serialized + encrypted bytecode (anti-static-dump) — **done**.
-2. **Control-flow scrambling + opaque predicates + junk** in the bytecode — makes devirtualization
-   hard *after* a dump; completable + verifiable.
-3. **Register VM** — fixes the perf gap and is harder to devirtualize than a tree-walker.
-4. **Anti-tamper feeding the key** (integrity → decryption) + **environment-derived keys** —
-   needs real Studio testing; can break things if rushed.
+2. ✅ **Control-flow scrambling** — opaque-predicate-guarded dead branches + side-effect-free junk
+   injected throughout the bytecode (`--scramble`, default on). Verified behaviour-safe.
+3. ✅ **Anti-tamper** — a checksum of the bytecode blob woven into entry-proto selection
+   (`--anti-tamper`): tamper the blob and it derails instead of running modified. (Client-side, so
+   inherently limited — an attacker who controls the runtime can still hook around it.)
+4. ⏳ **Register VM** — fixes the perf gap and is harder to devirtualize than a tree-walker.
+5. **Environment-derived keys** — needs real Studio testing; can break things if rushed.
 5. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
 6. Per-function controls (exclude hot paths from virtualization), packing.
 

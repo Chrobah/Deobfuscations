@@ -97,19 +97,32 @@ local PROTOS={}
 for i=1,#_pl do local p=_pl[i] PROTOS[i]={params=p[1],vararg=p[2]==1,body=p[3]} end
 """
 
-def emit_program(prog, vmtext, opmap):
+def _cksum(b):
+    h=0
+    for x in b: h=(h*31+x)%16777216
+    return h
+
+def emit_program(prog, vmtext, opmap, anti_tamper=False):
     blob=serialize_program(prog)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g), g) for g in prog['globals'])+'}'
     opline='local '+','.join(OPNAMES)+'='+','.join(str(opmap[n]) for n in OPNAMES)
     vmtext=vmtext.replace('--@OPCODES@', opline)
-    header=('local BLOB=%s\n%s\nlocal G=%s\n' % (lua_str(blob), DESER.replace('BLOB','BLOB',1), gcap))
+    extra=''
+    entry='1'
+    if anti_tamper:
+        ck=_cksum(blob)
+        extra=('local function _ck(s) local h=0 for i=1,#s do h=(h*31+string.byte(s,i))%%16777216 end return h end\n'
+               'local _CK=%d\n' % ck)
+        entry='(1+_CK-_ck(BLOB))'
+    vmtext=vmtext.replace('return make_closure(1, nil)(...)', extra+'return make_closure('+entry+', nil)(...)')
+    header=('local BLOB=%s\n%s\nlocal G=%s\n' % (lua_str(blob), DESER, gcap))
     return header+vmtext
 
 def serialize(src, vmtext):
     import rcompile
     opmap={n:getattr(rcompile,n) for n in OPNAMES}
     prog=compile_src(src)
-    return emit_program(prog, vmtext, opmap)
+    return emit_program(prog, vmtext, opmap)  # (serialize() path: no anti-tamper)
 
 if __name__=='__main__':
     vm=open('rvm.luau').read()
