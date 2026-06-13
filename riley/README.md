@@ -23,7 +23,8 @@ your .luau
       └─[rasm]→ register bytecode: flat per-function instruction stream (jumps) + constant pool
           └─[rvmreg_gen]→ a generic register interpreter (scopes, closures, metatables, multi-returns,
                           varargs, generalized iteration); bytecode serialized to an encrypted blob &
-                          rebuilt by a deserializer at runtime; opcodes randomized per build
+                          rebuilt by a deserializer at runtime; opcodes randomized per build; the
+                          constant pool is XOR-encoded INSIDE the blob and decoded only at runtime
               └─[luaobf]→ encrypt the constant pool, obfuscate the interpreter's own
                           identifiers/fields, minify, wrap in a closure
 ```
@@ -51,6 +52,22 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 string interpolation · number literals (hex/binary/underscores) · type annotations **and `type` / `export type` aliases** (parsed & erased, incl. string-literal unions / function / table types).
 
 `riley.py … --verify` re-checks every build with `luau-compile`.
+
+## Against decompilers / leaks (measured, not claimed)
+
+The real Roblox dev threat is: someone dumps your `LocalScript`/`ModuleScript` with a decompiler or
+`saveinstance`, reads it, and reuses your logic. The test that matters is what survives in the
+**compiled bytecode** a decompiler works from. Measured with `luau-compile --dump-constants`:
+
+| script | native bytecode | riley-protected bytecode |
+|--------|-----------------|--------------------------|
+| score-signer (has a secret salt) | secret salt + opcodes in plaintext `K`s | **0 string constants** |
+| Signatures (executor/brand name list) | **229** plaintext strings (`getgenv`, `msdoors`, `rbxassetid://…`, …) | **0** — none recoverable |
+
+A decompiler run on a riley output reconstructs the *interpreter* (a flat dispatch over numeric
+opcodes) plus an encrypted blob — **not your code, not your strings**. Strings are protected by two
+independent layers (XOR-encoded inside the bytecode blob, then the whole blob encrypted by the
+hardening layer), so even peeling the outer layer and deserializing does not surface plaintext.
 
 ## Options
 

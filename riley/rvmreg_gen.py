@@ -15,17 +15,19 @@ def lua_str(b):
         else: out.append('\\%03d'%x)   # 3-digit padded so a following digit char cannot merge into the escape
     return '"'+''.join(out)+'"'
 
-def serialize_reg(prog):
-    out=bytearray()
+def serialize_reg(prog, ckey=137):
+    out=bytearray(); out.append(ckey & 0xFF)        # per-build constant key (first byte)
     def uv(n):
         while True:
             b=n&0x7f; n>>=7
             out.append(b|0x80 if n else b)
             if not n: break
     def sv(n): uv(2*n if n>=0 else -2*n-1)         # zig-zag
-    def st(b):
+    ci=[0]
+    def st(b):                                      # constants stored XOR-encoded, not plaintext
         if isinstance(b,str): b=b.encode()
-        uv(len(b)); out.extend(b)
+        ci[0]+=1; uv(len(b))
+        for e,c in enumerate(b): out.append((c ^ ((ckey + ci[0]*31 + (e+1)*7) % 256)) & 0xFF)
     uv(len(prog['consts']))
     for c in prog['consts']: st(c)
     uv(len(prog['protos']))
@@ -47,10 +49,12 @@ def serialize_reg(prog):
     return bytes(out)
 
 DESER = r'''local function _deser(s)
- local pos=1; local byte=string.byte; local sub=string.sub
+ local pos=1; local byte=string.byte; local char=string.char; local bxor=bit32.bxor; local cat=table.concat
+ local ckey=byte(s,pos); pos=pos+1
  local function uv() local r,sh=0,0 while true do local b=byte(s,pos);pos=pos+1;r=r+(b%128)*2^sh;if b<128 then break end;sh=sh+7 end return r end
  local function sv() local u=uv() if u%2==0 then return u/2 else return -(u+1)/2 end end
- local function st() local n=uv();local b=sub(s,pos,pos+n-1);pos=pos+n;return b end
+ local ci=0
+ local function st() ci=ci+1; local n=uv(); local t={} for j=1,n do t[j]=char(bxor(byte(s,pos+j-1),(ckey+ci*31+j*7)%256)) end pos=pos+n return cat(t) end
  local K={}; local nc=uv(); for i=1,nc do K[i]=st() end
  local protos={}; local np=uv()
  for i=1,np do
@@ -260,7 +264,7 @@ def generate(src, rng=None, anti_tamper=False, scramble=0.0):
         perms={a: list(range(a)) for a in range(2,5)}; junk_ops=[]
     apply_operand_perm(prog, perms)
     opdefs='\n'.join('local O_%s=%d'%(n,newOP[n]) for n in names)
-    blob=serialize_reg(prog)
+    blob=serialize_reg(prog, rng.randrange(256) if rng is not None else 137)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g),g) for g in prog['globals'])+'}'
     vm=build_vm(rng, perms, junk_ops)
     extra=''; entry='1'
