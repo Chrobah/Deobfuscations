@@ -105,22 +105,33 @@ BODY={
 
 def _rid(rng): return ''.join(rng.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(7))
 
-def apply_operand_perm(prog, perm):
-    # METAMORPHIC: operand j (0-based) is stored at slot perm[j]; pad to 4 operand slots.
-    # The VM reads operand j from ins[2+perm[j]] (see build_vm sub()), so encoder & decoder agree
-    # while the on-wire instruction layout differs every build.
+def _arity(body):                                   # how many operands an opcode body reads
+    a=0
+    for k in range(4):
+        if 'ins[%d]'%(2+k) in body: a=k+1
+    return a
+
+def apply_operand_perm(prog, perms):
+    # METAMORPHIC: within each instruction, operand j is stored at slot perms[arity][j] (no padding).
+    # The VM reads operand j from ins[2+perms[arity][j]] (build_vm sub()), so encoder & decoder agree
+    # while the operand layout differs every build.
     for p in prog['protos']:
         nc=[]
         for ins in p['code']:
-            slots=[0,0,0,0]
-            for j,val in enumerate(ins[1:]): slots[perm[j]]=val
+            ops=ins[1:]; a=len(ops)
+            if a<=1: nc.append(ins); continue
+            perm=perms[a]; slots=[None]*a
+            for j,val in enumerate(ops): slots[perm[j]]=val
             nc.append([ins[0]]+slots)
         p['code']=nc
 
-def build_vm(rng, perm, junk_ops):
+def build_vm(rng, perms, junk_ops):
     def sub(body):                                  # remap operand references to permuted slots
-        for k in range(4): body=body.replace('ins[%d]'%(2+k), '\x00%d\x00'%k)
-        for k in range(4): body=body.replace('\x00%d\x00'%k, 'ins[%d]'%(2+perm[k]))
+        a=_arity(body)
+        if a<=1: return body
+        perm=perms[a]
+        for k in range(a): body=body.replace('ins[%d]'%(2+k), '\x00%d\x00'%k)
+        for k in range(a): body=body.replace('\x00%d\x00'%k, 'ins[%d]'%(2+perm[k]))
         return body
     bodies=dict(BODY)
     order=list(HOT)
@@ -239,19 +250,19 @@ def generate(src, rng=None, anti_tamper=False, scramble=0.0):
     rev={defOP[n]:newOP[n] for n in names}          # remap instruction opcodes consistently
     for pr in prog['protos']:
         for ins in pr['code']: ins[0]=rev[ins[0]]
-    # --- metamorphic layer: per-build operand layout + dead-opcode branches ---
+    # --- metamorphic layer: per-build per-arity operand layout + dead-opcode branches ---
     if rng is not None:
-        perm=rng.sample(range(4),4)
+        perms={a: rng.sample(range(a),a) for a in range(2,5)}
         used=set(newOP.values()); pool=[x for x in range(2,250) if x not in used]; rng.shuffle(pool)
         bnames=list(BODY.keys())
         junk_ops=[(pool[i], rng.choice(bnames)) for i in range(min(rng.randint(3,7), len(pool)))]
     else:
-        perm=[0,1,2,3]; junk_ops=[]
-    apply_operand_perm(prog, perm)
+        perms={a: list(range(a)) for a in range(2,5)}; junk_ops=[]
+    apply_operand_perm(prog, perms)
     opdefs='\n'.join('local O_%s=%d'%(n,newOP[n]) for n in names)
     blob=serialize_reg(prog)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g),g) for g in prog['globals'])+'}'
-    vm=build_vm(rng, perm, junk_ops)
+    vm=build_vm(rng, perms, junk_ops)
     extra=''; entry='1'
     if anti_tamper:
         ck=_cksum(blob)
