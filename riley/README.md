@@ -48,7 +48,7 @@ method calls & `self` · **multiple return values** & truncation via `()` · **v
 `select`) · recursion · **table constructors** (array/record/mixed/trailing-multi) ·
 **metatables/metamethods** (`__index`, `__add`, `__eq`, `__lt`, `__call`, `__tostring`, `__iter`, …) ·
 **live globals** (reads/writes hit the real environment, visible across scripts) · `pcall`/`error` ·
-string interpolation · number literals (hex/binary/underscores) · type annotations (parsed & erased).
+string interpolation · number literals (hex/binary/underscores) · type annotations **and `type` / `export type` aliases** (parsed & erased, incl. string-literal unions / function / table types).
 
 `riley.py … --verify` re-checks every build with `luau-compile`.
 

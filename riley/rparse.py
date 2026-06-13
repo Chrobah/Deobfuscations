@@ -65,7 +65,58 @@ class P:
                     depth-=2
                     if depth<=0: break
                 elif c.k=='EOF': break
+    def _skip_balanced(s):
+        # consume a balanced bracket group: ( ) { } [ ] and generic < > (>> closes two)
+        depth=0
+        while True:
+            c=s.cur()
+            if c.k=='EOF': return
+            if c.k=='OP':
+                if c.v in ('(','{','[') or c.v=='<': depth+=1; s.nx(); continue
+                if c.v in (')','}',']') or c.v=='>':
+                    depth-=1; s.nx()
+                    if depth<=0: return
+                    continue
+                if c.v=='>>':
+                    depth-=2; s.nx()
+                    if depth<=0: return
+                    continue
+            s.nx()
     def skip_type(s):
+        # consume one type expression (alias RHS, annotation, or cast) and stop at its end.
+        # tracks atom/continuation so it doesn't run into the next statement.
+        expect_atom=True
+        while True:
+            c=s.cur()
+            if c.k=='EOF': return
+            if expect_atom:
+                if c.k=='STR' or c.k=='NUM': s.nx(); expect_atom=False; continue
+                if c.k=='KW' and c.v in ('true','false','nil'): s.nx(); expect_atom=False; continue
+                if c.k=='NAME':
+                    isty=(c.v=='typeof'); s.nx()
+                    while s.atv('.'):
+                        s.nx()
+                        if s.cur().k=='NAME': s.nx()
+                    if s.atv('<'): s._skip_balanced()
+                    if isty and s.atv('('): s._skip_balanced()
+                    expect_atom=False; continue
+                if c.k=='OP' and c.v in ('{','['): s._skip_balanced(); expect_atom=False; continue
+                if c.k=='OP' and c.v=='(':
+                    s._skip_balanced()
+                    if s.atv('->'): s.nx(); expect_atom=True; continue   # function type: read return
+                    expect_atom=False; continue
+                if c.k=='OP' and c.v in ('...','&','|'): s.nx(); continue  # leading sep / variadic
+                return
+            else:
+                if c.k=='OP' and c.v in ('|','&','->'): s.nx(); expect_atom=True; continue
+                if c.k=='OP' and c.v=='?': s.nx(); continue
+                if c.k=='OP' and c.v in ('<','['): s._skip_balanced(); continue
+                if c.k=='OP' and c.v=='.':
+                    s.nx()
+                    if s.cur().k=='NAME': s.nx()
+                    continue
+                return
+    def _skip_type_old(s):
         # consume a type expression up to a delimiter at depth 0
         depth=0
         STOP_OP={',',')',']','}',';','='}
