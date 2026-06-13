@@ -127,6 +127,10 @@ arms race), here is the real picture. Do not treat riley as Luraph-equivalent.
 **What riley now also has (since the first cut):**
 - A **register VM** (now the default): flat register bytecode, capture-analysed local boxing,
   blob-serialized + encrypted, full Luau coverage, ~1.3–1.7× faster than the tree-walker.
+- A **metamorphic register VM** — every build differs *structurally*, not just in opcode numbers:
+  per-build **operand-slot permutation** (the bytecode encoding contract changes), **dispatch
+  reordering**, and **dead-opcode branches + junk** in the interpreter. No two builds share a VM,
+  so signatures and a recorded opcode/operand map don't transfer between builds.
 - **Control-flow scrambling** (`--scramble`, both VMs): opaque-predicate-guarded dead branches and
   junk in the tree-walker; dead instruction blocks (jump-over-junk) in the register VM.
 - **Anti-tamper** (`--anti-tamper`, both VMs): a blob checksum woven into entry selection (tamper → derail).
@@ -138,8 +142,9 @@ arms race), here is the real picture. Do not treat riley as Luraph-equivalent.
   hosted interpreter (~20–70× slower than native, workload-dependent).
 - **Anti-debug / decompiler-crashers** and trap-redirected control flow (TrollVM™, debug-library
   tamper detection). riley's anti-tamper is a single woven integrity check, and client-side.
-- **Metamorphic VM** — the interpreter body itself mutating per build. riley randomizes opcodes
-  (both VMs) and scrambles the tree-walker's control flow, but does not yet mutate the VM body.
+- **Deeper metamorphism.** riley mutates the VM's *structure* (operand layout, dispatch order, junk,
+  opcodes) per build, which defeats signatures and map-replay — but it does not yet rewrite the VM's
+  *logic* per build, so a skilled human writing an adaptive lifter can still re-derive each build.
 - **Environment / platform locking**, per-function macros (`LPH_NO_VIRTUALIZE`, `LPH_ENCFUNC`), and —
   most importantly — a team shipping **weekly updates specifically to defeat new deobfuscators**.
 
@@ -165,11 +170,12 @@ dedicated expert. For truly sensitive logic, keep it on the **server**.
    ~1.3–1.7× faster than the tree-walker. Verified behaviour-identical (suite + 700-program fuzzer).
 5. ✅ **Full Luau coverage + live globals** — generalized iteration / `__iter`, real-environment globals;
    no language caveats remain on either VM.
-6. **Environment-derived keys** — needs real Studio testing; can break things if rushed.
-7. **VM metamorphism** (mutate the interpreter per build) — the deepest signature defense.
-8. Per-function controls (exclude hot paths from virtualization), packing.
-
-Items 6–8 trend toward "team running an arms race" and are where parity actually lives.
+6. ✅ **Metamorphic register VM** — per-build operand-slot permutation, dispatch reordering, and
+   dead-opcode branches/junk, on top of randomized opcodes. No two builds share a VM structure.
+   Verified behaviour-identical (suite × 12 seeds + 500-program fuzzer incl. `__add` metamethods).
+7. **Deeper metamorphism** (rewrite the VM's *logic* per build, not just its layout) — the endgame
+   signature defense, and where a team running an arms race actually lives.
+8. **Environment-derived keys**, per-function controls (exclude hot paths), packing.
 
 ## Requirements
 

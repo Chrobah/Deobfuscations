@@ -103,14 +103,41 @@ BODY={
 'RET':'local base=ins[2];local cnt=ins[3];if cnt==1 then return R[base] elseif cnt==0 then return else if cnt==-1 then cnt=top-base end;local rv={};for i=1,cnt do rv[i]=R[base+i-1] end;return unpack(rv,1,cnt) end',
 }
 
-def build_vm():
+def _rid(rng): return ''.join(rng.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(7))
+
+def apply_operand_perm(prog, perm):
+    # METAMORPHIC: operand j (0-based) is stored at slot perm[j]; pad to 4 operand slots.
+    # The VM reads operand j from ins[2+perm[j]] (see build_vm sub()), so encoder & decoder agree
+    # while the on-wire instruction layout differs every build.
+    for p in prog['protos']:
+        nc=[]
+        for ins in p['code']:
+            slots=[0,0,0,0]
+            for j,val in enumerate(ins[1:]): slots[perm[j]]=val
+            nc.append([ins[0]]+slots)
+        p['code']=nc
+
+def build_vm(rng, perm, junk_ops):
+    def sub(body):                                  # remap operand references to permuted slots
+        for k in range(4): body=body.replace('ins[%d]'%(2+k), '\x00%d\x00'%k)
+        for k in range(4): body=body.replace('\x00%d\x00'%k, 'ins[%d]'%(2+perm[k]))
+        return body
+    bodies=dict(BODY)
+    order=list(HOT)
+    if rng is not None:
+        front=order[:10]; back=order[10:]; rng.shuffle(front); rng.shuffle(back); order=front+back
+    branches=[('O_%s'%n, sub(bodies[n])) for n in order]
+    for num, bn in junk_ops:                        # dead-opcode branches (never emitted -> never run)
+        branches.insert(rng.randint(1,max(1,len(branches))), (str(num), sub(BODY[bn])))
     lines=[]
-    for i,name in enumerate(HOT):
-        kw='if' if i==0 else 'elseif'
-        lines.append('    %s op==O_%s then %s'%(kw,name,BODY[name]))
+    for i,(cond,body) in enumerate(branches):
+        lines.append('    %s op==%s then %s'%('if' if i==0 else 'elseif', cond, body))
     lines.append('    else error("bad op "..tostring(op)) end')
     dispatch='\n'.join(lines)
-    return r'''local unpack=table.unpack or unpack
+    jl=''
+    if rng is not None:
+        for _ in range(rng.randint(2,5)): jl+='local _%s=%d\n'%(_rid(rng), rng.randint(1,1<<30))
+    return jl+r'''local unpack=table.unpack or unpack
 local pack=table.pack
 local function _iter(f,s,c)                 -- Luau generalized iteration
   if type(f)=="function" then return f,s,c end
@@ -212,10 +239,19 @@ def generate(src, rng=None, anti_tamper=False, scramble=0.0):
     rev={defOP[n]:newOP[n] for n in names}          # remap instruction opcodes consistently
     for pr in prog['protos']:
         for ins in pr['code']: ins[0]=rev[ins[0]]
+    # --- metamorphic layer: per-build operand layout + dead-opcode branches ---
+    if rng is not None:
+        perm=rng.sample(range(4),4)
+        used=set(newOP.values()); pool=[x for x in range(2,250) if x not in used]; rng.shuffle(pool)
+        bnames=list(BODY.keys())
+        junk_ops=[(pool[i], rng.choice(bnames)) for i in range(min(rng.randint(3,7), len(pool)))]
+    else:
+        perm=[0,1,2,3]; junk_ops=[]
+    apply_operand_perm(prog, perm)
     opdefs='\n'.join('local O_%s=%d'%(n,newOP[n]) for n in names)
     blob=serialize_reg(prog)
     gcap='{'+','.join('[%s]=%s'%(lua_str(g),g) for g in prog['globals'])+'}'
-    vm=build_vm()
+    vm=build_vm(rng, perm, junk_ops)
     extra=''; entry='1'
     if anti_tamper:
         ck=_cksum(blob)
